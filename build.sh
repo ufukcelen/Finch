@@ -61,6 +61,10 @@ cat << 'EOF' > "$CONTENTS_DIR/Info.plist"
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0.0</string>
+    <key>CFBundleSupportedPlatforms</key>
+    <array>
+        <string>MacOSX</string>
+    </array>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
@@ -89,7 +93,9 @@ swiftc -parse-as-library -O \
     -framework WidgetKit \
     -framework SwiftUI \
     -framework AppKit \
+    -framework Foundation \
     -target arm64-apple-macos14.0 \
+    -Xlinker -e -Xlinker _NSExtensionMain \
     "$DIR/Sources/YouTubeWidgetExtension/YouTubeWidgetExtension.swift" \
     -o "$EXT_MACOS/YouTubeWidgetExtension"
 
@@ -117,6 +123,10 @@ cat << 'EOF' > "$EXT_CONTENTS/Info.plist"
     <string>XPC!</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0.0</string>
+    <key>CFBundleSupportedPlatforms</key>
+    <array>
+        <string>MacOSX</string>
+    </array>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
@@ -130,31 +140,32 @@ cat << 'EOF' > "$EXT_CONTENTS/Info.plist"
 </plist>
 EOF
 
-# 5. Ad-hoc Kod İmzalama (Doğru hiyerarşiyle: Extension -> Executable -> Bundle)
-echo "🔏 4. Kod imzalanıyor (Sandbox & Network yetkileri)..."
-codesign --force --sign - --entitlements "$DIR/scripts/extension.entitlements" "$EXTENSION_DIR" 2>/dev/null || true
-codesign --force --sign - --entitlements "$DIR/scripts/app.entitlements" "$MACOS_DIR/YouTubeWidget" 2>/dev/null || true
-codesign --force --sign - "$APP_DIR" 2>/dev/null || true
+# 5. Ad-hoc Kod İmzalama (Doğru hiyerarşiyle ve runtime options ile)
+echo "🔏 4. Kod imzalanıyor (App Sandbox & Runtime yetkileri)..."
+codesign --force --options runtime --sign - --entitlements "$DIR/scripts/extension.entitlements" "$EXTENSION_DIR" 2>/dev/null || true
+codesign --force --options runtime --sign - --entitlements "$DIR/scripts/app.entitlements" "$MACOS_DIR/YouTubeWidget" 2>/dev/null || true
+codesign --force --options runtime --sign - "$APP_DIR" 2>/dev/null || true
 
 # 6. /Applications dizinine senkronizasyon & LaunchServices kaydı
 LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
 
-echo "🚀 5. /Applications dizinine yükleniyor..."
+echo "🚀 5. /Applications dizinine senkronize ediliyor..."
 rm -rf "/Applications/YouTubeWidget.app"
 cp -R "$APP_DIR" /Applications/
 
-# /Applications altındaki imzayı tazele ve kaydet
-codesign --force --sign - --entitlements "$DIR/scripts/extension.entitlements" "/Applications/YouTubeWidget.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
-codesign --force --sign - --entitlements "$DIR/scripts/app.entitlements" "/Applications/YouTubeWidget.app/Contents/MacOS/YouTubeWidget" 2>/dev/null || true
-codesign --force --sign - "/Applications/YouTubeWidget.app" 2>/dev/null || true
+# /Applications altındaki imzayı tazele
+codesign --force --options runtime --sign - --entitlements "$DIR/scripts/extension.entitlements" "/Applications/YouTubeWidget.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
+codesign --force --options runtime --sign - --entitlements "$DIR/scripts/app.entitlements" "/Applications/YouTubeWidget.app/Contents/MacOS/YouTubeWidget" 2>/dev/null || true
+codesign --force --options runtime --sign - "/Applications/YouTubeWidget.app" 2>/dev/null || true
 
-# macOS LaunchServices ve WidgetKit servisini güncelle
+# macOS LaunchServices & PluginKit sistem kaydı
 if [ -f "$LSREGISTER" ]; then
-    "$LSREGISTER" -f /Applications/YouTubeWidget.app 2>/dev/null || true
+    "$LSREGISTER" -f -R -trusted /Applications/YouTubeWidget.app 2>/dev/null || true
 fi
 pluginkit -a "/Applications/YouTubeWidget.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
+pluginkit -e use -i com.ufukcelen.youtubewidget.extension 2>/dev/null || true
 
-# chronod (macOS widget motoru) yenileniyor
+# chronod servisini yenile
 killall -9 chronod 2>/dev/null || true
 
 echo "=========================================="

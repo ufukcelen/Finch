@@ -94,6 +94,24 @@ struct YouTubeTimelineProvider: TimelineProvider {
     }
 
     private func loadSharedStats() -> ExtensionYouTubeStats? {
+        // 1. Try reading from App Group UserDefaults
+        if let sharedDefaults = UserDefaults(suiteName: "group.com.ufukcelen.youtubewidget"),
+           let data = sharedDefaults.data(forKey: "SharedConfig"),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let statsDict = json["stats"] as? [String: Any] {
+            var stats = ExtensionYouTubeStats()
+            stats.channelTitle = statsDict["channelTitle"] as? String ?? "YouTube Kanalı"
+            stats.handle = statsDict["handle"] as? String ?? "@kanal"
+            stats.subscriberCount = statsDict["subscriberCount"] as? String ?? "--"
+            stats.avatarURL = statsDict["avatarURL"] as? String
+            stats.latestShortTitle = statsDict["latestShortTitle"] as? String ?? ""
+            stats.latestShortViews = statsDict["latestShortViews"] as? String ?? "--"
+            stats.latestShortThumbnail = statsDict["latestShortThumbnail"] as? String
+            stats.latestShortURL = statsDict["latestShortURL"] as? String
+            return stats
+        }
+
+        // 2. Try Application Support JSON
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let fileURL = appSupport.appendingPathComponent("YouTubeWidget/shared_data.json")
 
@@ -361,16 +379,19 @@ struct YouTubeWidgetEntryView: View {
     }
 
     private var widgetBackground: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
-            .fill(.ultraThinMaterial)
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+        ZStack {
+            Color.black.opacity(0.35)
+            LinearGradient(
+                colors: [Color.red.opacity(0.22), Color.black.opacity(0.1)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
+        }
     }
 }
 
 // MARK: - Widget Configuration
+@main
 struct YouTubeSystemWidget: Widget {
     let kind: String = "com.ufukcelen.youtubewidget.extension"
 
@@ -378,15 +399,10 @@ struct YouTubeSystemWidget: Widget {
         StaticConfiguration(kind: kind, provider: YouTubeTimelineProvider()) { entry in
             YouTubeWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("YouTube Kanalı")
-        .description("Abone sayınızı ve son Shorts videonuzu masaüstünüzde takip edin.")
+        .configurationDisplayName("YouTube Widget")
+        .description("YouTube abone sayınızı ve son Shorts videonuzu masaüstünüzde takip edin.")
         .supportedFamilies([.systemSmall, .systemMedium])
+        .contentMarginsDisabled()
     }
 }
 
-@main
-struct YouTubeWidgetBundle: WidgetBundle {
-    var body: some Widget {
-        YouTubeSystemWidget()
-    }
-}
