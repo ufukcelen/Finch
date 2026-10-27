@@ -133,13 +133,16 @@ codesign --force --options runtime --sign - "/Applications/YouTubeWidget.app" 2>
 
 # macOS LaunchServices & PluginKit sistem kaydı
 if [ -f "$LSREGISTER" ]; then
+    "$LSREGISTER" -u "$DIR/YouTubeWidget.app" 2>/dev/null || true
     "$LSREGISTER" -f -R -trusted /Applications/YouTubeWidget.app 2>/dev/null || true
 fi
+pluginkit -r "$DIR/YouTubeWidget.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
 pluginkit -a "/Applications/YouTubeWidget.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
 pluginkit -e use -i com.ufukcelen.youtubewidget.extension 2>/dev/null || true
 
-# chronod servisini yenile
+# chronod ve NotificationCenter (Widget Galerisi) servislerini yenile
 killall -9 chronod 2>/dev/null || true
+killall NotificationCenter 2>/dev/null || true
 
 echo "=========================================="
 echo "✅ Tamamlandı! YouTubeWidget v0.0.3 başarıyla kuruldu:"
