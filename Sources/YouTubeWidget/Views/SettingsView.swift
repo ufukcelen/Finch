@@ -1,9 +1,10 @@
 import SwiftUI
 
 public final class SettingsState: ObservableObject {
-    @Published public var inputChannel: String = ""
+    @Published public var activeSlot: String = "youtube1"
+    @Published public var inputHandle: String = ""
     @Published public var inputApiKey: String = ""
-    @Published public var selectedInterval: Int = 15
+    @Published public var selectedInterval: Int = 360
     @Published public var selectedTheme: String = "red"
     @Published public var isTesting: Bool = false
     @Published public var testResult: String? = nil
@@ -14,16 +15,18 @@ public final class SettingsState: ObservableObject {
 
 public struct SettingsView: View {
     @ObservedObject var viewModel: WidgetViewModel
-    @ObservedObject var state: SettingsState
+    @StateObject private var state = SettingsState()
 
     public init(viewModel: WidgetViewModel) {
         self.viewModel = viewModel
-        let s = SettingsState()
-        s.inputChannel = viewModel.channelInput
-        s.inputApiKey = viewModel.apiKey
-        s.selectedInterval = viewModel.refreshIntervalMinutes
-        s.selectedTheme = viewModel.theme
-        self.state = s
+    }
+
+    private var activePlatform: SocialPlatform {
+        switch state.activeSlot {
+        case "instagram": return .instagram
+        case "tiktok": return .tiktok
+        default: return .youtube
+        }
     }
 
     public var body: some View {
@@ -34,22 +37,22 @@ public struct SettingsView: View {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [Color(red: 1.0, green: 0.1, blue: 0.1), Color(red: 0.8, green: 0.0, blue: 0.0)],
+                                colors: headerColors,
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .frame(width: 38, height: 38)
 
-                    Image(systemName: "play.rectangle.fill")
-                        .font(.system(size: 18))
+                    Image(systemName: activePlatform.iconName)
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("YouTube Widget Ayarları")
+                    Text("Widget Ayarları & Kanal Değiştir")
                         .font(.headline)
-                    Text("İstediğiniz YouTube kanalını bağlayın ve temayı seçin.")
+                    Text("Widget kütüphanesinden eklenen her widgeti dilediğiniz hesaba bağlayın.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -61,20 +64,54 @@ public struct SettingsView: View {
 
             Divider()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    // MARK: - Section 1: Channel
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("YouTube Kanalınız", systemImage: "person.crop.square.filled.and.at.rectangle")
-                            .font(.system(size: 13, weight: .bold))
+            // Slot Tabs (Segmented Control)
+            VStack(spacing: 6) {
+                HStack {
+                    Text("Yapılandırılan Widget:")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
 
-                        VStack(alignment: .leading, spacing: 4) {
+                Picker("", selection: $state.activeSlot) {
+                    Text("🔴 YouTube (1)").tag("youtube1")
+                    Text("🔴 YouTube (2)").tag("youtube2")
+                    Text("📸 Instagram").tag("instagram")
+                    Text("🎵 TikTok").tag("tiktok")
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: state.activeSlot) { newSlot in
+                    loadSlotData(newSlot)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 10)
+            .padding(.bottom, 6)
+
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    // MARK: - Section 1: Channel / Account Input
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Label(inputSectionTitle, systemImage: activePlatform.iconName)
+                                .font(.system(size: 13, weight: .bold))
+                            Spacer()
+                            if let acc = viewModel.accounts[state.activeSlot], acc.isConfigured {
+                                Text("Mevcut: \(acc.mainStatCount)")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.green)
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 5) {
                             HStack {
-                                TextField("Örn: @UykusuzTosba veya @barisozcan", text: $state.inputChannel)
+                                TextField(inputPlaceholder, text: $state.inputHandle)
                                     .textFieldStyle(.roundedBorder)
 
                                 Button {
-                                    testChannelConnection()
+                                    testConnection()
                                 } label: {
                                     if state.isTesting {
                                         ProgressView()
@@ -85,10 +122,10 @@ public struct SettingsView: View {
                                             .frame(width: 60)
                                     }
                                 }
-                                .disabled(state.inputChannel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.isTesting)
+                                .disabled(state.inputHandle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.isTesting)
                             }
 
-                            Text("Kanal kullanıcı adınızı (@kullanici), kanal URL bağlantınızı veya Kanal ID'nizi yazabilirsiniz.")
+                            Text(inputDescription)
                                 .font(.system(size: 10))
                                 .foregroundColor(.secondary)
                         }
@@ -101,6 +138,7 @@ public struct SettingsView: View {
                                 Text(res)
                                     .font(.system(size: 11, weight: .medium))
                                     .foregroundColor(state.isSuccess ? .green : .red)
+                                    .lineLimit(2)
                             }
                             .padding(.top, 2)
                         }
@@ -113,16 +151,15 @@ public struct SettingsView: View {
 
                     // MARK: - Section 2: Widget Theme & Customization
                     VStack(alignment: .leading, spacing: 12) {
-                        Label("Widget Teması & Görünüm", systemImage: "paintbrush.fill")
+                        Label("Görünüm & Tema", systemImage: "paintbrush.fill")
                             .font(.system(size: 13, weight: .bold))
 
-                        // Theme Selector
                         HStack {
                             Text("Widget Teması:")
                                 .font(.system(size: 12, weight: .medium))
                             Spacer()
                             Picker("", selection: $state.selectedTheme) {
-                                Text("🔴 YouTube Kırmızısı").tag("red")
+                                Text("🔴 Canlı Kırmızı").tag("red")
                                 Text("⬛️ Koyu Titanyum").tag("dark")
                                 Text("🪟 Buzlu Cam (Şeffaf)").tag("glass")
                                 Text("🟣 Siber Mor Neon").tag("neon")
@@ -131,19 +168,26 @@ public struct SettingsView: View {
                             .frame(width: 200)
                         }
 
-                        // Refresh Interval Picker
+                        Divider()
+
+                        // MARK: - Update Interval (2h, 6h, 12h, 24h as requested)
                         HStack {
-                            Text("Otomatik Yenileme Sıklığı:")
-                                .font(.system(size: 12, weight: .medium))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Otomatik Güncelleme:")
+                                    .font(.system(size: 12, weight: .medium))
+                                Text("Sistemi ve pili yormamak için periyot seçin")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.secondary)
+                            }
                             Spacer()
                             Picker("", selection: $state.selectedInterval) {
-                                Text("15 Dakika").tag(15)
-                                Text("30 Dakika").tag(30)
-                                Text("1 Saat").tag(60)
-                                Text("3 Saat").tag(180)
+                                Text("2 Saat").tag(120)
+                                Text("6 Saat (Önerilen)").tag(360)
+                                Text("12 Saat").tag(720)
+                                Text("24 Saat").tag(1440)
                             }
                             .pickerStyle(.menu)
-                            .frame(width: 140)
+                            .frame(width: 160)
                         }
                     }
                     .padding()
@@ -152,37 +196,38 @@ public struct SettingsView: View {
                             .fill(Color.primary.opacity(0.03))
                     )
 
-                    // MARK: - Section 3: Optional API Key
-                    DisclosureGroup {
-                        VStack(alignment: .leading, spacing: 6) {
-                            TextField("AIzaSy...", text: $state.inputApiKey)
-                                .textFieldStyle(.roundedBorder)
+                    // MARK: - Section 3: Optional YouTube API Key
+                    if activePlatform == .youtube {
+                        DisclosureGroup {
+                            VStack(alignment: .leading, spacing: 6) {
+                                TextField("AIzaSy...", text: $state.inputApiKey)
+                                    .textFieldStyle(.roundedBorder)
 
-                            Text("Varsayılan olarak widget API anahtarına ihtiyaç DUYMADAN çalışır. İsteğe bağlı olarak kendi YouTube Data API v3 anahtarınızı da girebilirsiniz.")
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary)
+                                Text("Varsayılan olarak YouTube Data API anahtarı gerekmeden doğrudan çalışır. İsteğe bağlı olarak kendi API anahtarınızı da kullanabilirsiniz.")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.top, 6)
+                        } label: {
+                            Label("Gelişmiş: YouTube API v3 Anahtarı (İsteğe Bağlı)", systemImage: "key.fill")
+                                .font(.system(size: 12, weight: .medium))
                         }
-                        .padding(.top, 6)
-                    } label: {
-                        Label("Gelişmiş: YouTube API v3 Anahtarı (İsteğe Bağlı)", systemImage: "key.fill")
-                            .font(.system(size: 12, weight: .medium))
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.primary.opacity(0.03))
+                        )
                     }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.primary.opacity(0.03))
-                    )
                 }
                 .padding()
             }
 
             Divider()
 
-            // Footer actions
+            // Footer
             HStack {
-                Button("Örnek (@barisozcan)") {
-                    state.inputChannel = "@barisozcan"
-                    testChannelConnection()
+                Button(sampleButtonLabel) {
+                    fillSample()
                 }
                 .buttonStyle(.link)
                 .font(.system(size: 11))
@@ -203,26 +248,110 @@ public struct SettingsView: View {
             .padding()
             .background(Color.primary.opacity(0.02))
         }
-        .frame(width: 460, height: 490)
+        .frame(width: 480, height: 530)
+        .onAppear {
+            state.activeSlot = viewModel.activeSlot
+            loadSlotData(viewModel.activeSlot)
+        }
     }
 
-    private func testChannelConnection() {
-        let clean = state.inputChannel.trimmingCharacters(in: .whitespacesAndNewlines)
+    // MARK: - UI Helpers
+    private var headerColors: [Color] {
+        switch activePlatform {
+        case .youtube:
+            return [Color(red: 1.0, green: 0.1, blue: 0.1), Color(red: 0.8, green: 0.0, blue: 0.0)]
+        case .instagram:
+            return [Color(red: 0.88, green: 0.19, blue: 0.42), Color(red: 0.51, green: 0.15, blue: 0.82)]
+        case .tiktok:
+            return [Color(red: 0.0, green: 0.95, blue: 1.0), Color(red: 1.0, green: 0.0, blue: 0.3)]
+        }
+    }
+
+    private var inputSectionTitle: String {
+        switch state.activeSlot {
+        case "youtube1": return "YouTube Ana Kanalı"
+        case "youtube2": return "YouTube 2. Kanalı"
+        case "instagram": return "Instagram Hesabı"
+        case "tiktok": return "TikTok Hesabı"
+        default: return "Sosyal Medya Hesabı"
+        }
+    }
+
+    private var inputPlaceholder: String {
+        switch activePlatform {
+        case .youtube: return "Örn: @barisozcan veya @UykusuzTosba"
+        case .instagram: return "Örn: @instagram veya @barisozcan"
+        case .tiktok: return "Örn: @tiktok veya @mrbeast"
+        }
+    }
+
+    private var inputDescription: String {
+        switch activePlatform {
+        case .youtube:
+            return "YouTube kullanıcı adınızı (@kullanici), kanal URL'nizi veya Kanal ID'nizi yazabilirsiniz."
+        case .instagram:
+            return "Instagram kullanıcı adınızı (@kullanici) girin. Profilinizin açık olması yeterlidir."
+        case .tiktok:
+            return "TikTok kullanıcı adınızı (@kullanici) girin. Herhangi bir şifre gerekmez."
+        }
+    }
+
+    private var sampleButtonLabel: String {
+        switch activePlatform {
+        case .youtube: return "Örnek Doldur (@barisozcan)"
+        case .instagram: return "Örnek Doldur (@instagram)"
+        case .tiktok: return "Örnek Doldur (@tiktok)"
+        }
+    }
+
+    private func fillSample() {
+        switch activePlatform {
+        case .youtube: state.inputHandle = "@barisozcan"
+        case .instagram: state.inputHandle = "@instagram"
+        case .tiktok: state.inputHandle = "@tiktok"
+        }
+        testConnection()
+    }
+
+    private func loadSlotData(_ slot: String) {
+        state.testResult = nil
+        state.selectedInterval = viewModel.refreshIntervalMinutes
+        state.inputApiKey = viewModel.apiKey
+
+        if let acc = viewModel.accounts[slot] {
+            state.inputHandle = acc.handle.isEmpty ? acc.title : acc.handle
+            state.selectedTheme = acc.theme
+        } else {
+            state.inputHandle = ""
+            state.selectedTheme = activePlatform == .instagram ? "purple" : (activePlatform == .tiktok ? "neon" : "red")
+        }
+    }
+
+    private func testConnection() {
+        let clean = state.inputHandle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
 
         state.isTesting = true
         state.testResult = nil
 
+        let slot = state.activeSlot
+        let plat = activePlatform
+        let key = state.inputApiKey.isEmpty ? nil : state.inputApiKey
+        let theme = state.selectedTheme
+
         Task {
             do {
-                let stats = try await YouTubeService.shared.fetchStats(
-                    channelInput: clean,
-                    apiKey: state.inputApiKey.isEmpty ? nil : state.inputApiKey
+                let stats = try await SocialService.shared.fetchStats(
+                    slotID: slot,
+                    platform: plat,
+                    input: clean,
+                    apiKey: key,
+                    theme: theme
                 )
                 await MainActor.run {
                     self.state.isTesting = false
                     self.state.isSuccess = true
-                    self.state.testResult = "Bağlandı: '\(stats.channelTitle)' (\(stats.subscriberCount)) - Shorts: '\(stats.latestShortTitle)'"
+                    self.state.testResult = "Bağlandı: '\(stats.title)' (\(stats.mainStatCount) \(plat.statTitle.lowercased()))"
                 }
             } catch {
                 await MainActor.run {
@@ -235,13 +364,31 @@ public struct SettingsView: View {
     }
 
     private func saveAndApply() {
-        viewModel.channelInput = state.inputChannel.trimmingCharacters(in: .whitespacesAndNewlines)
-        viewModel.apiKey = state.inputApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let clean = state.inputHandle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let slot = state.activeSlot
+        let plat = activePlatform
+        let theme = state.selectedTheme
+        let key = state.inputApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+
         viewModel.refreshIntervalMinutes = state.selectedInterval
-        viewModel.theme = state.selectedTheme
+        if !key.isEmpty {
+            viewModel.apiKey = key
+        }
 
         Task {
-            await viewModel.refresh()
+            if !clean.isEmpty {
+                try? await viewModel.saveAccount(
+                    slotID: slot,
+                    platform: plat,
+                    input: clean,
+                    theme: theme,
+                    apiKey: key.isEmpty ? nil : key
+                )
+            } else if var acc = viewModel.accounts[slot] {
+                acc.theme = theme
+                viewModel.accounts[slot] = acc
+                viewModel.syncToSharedData()
+            }
         }
 
         DesktopWindowManager.shared.closeSettingsWindow()

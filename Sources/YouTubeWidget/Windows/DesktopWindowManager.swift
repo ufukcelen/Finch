@@ -11,21 +11,25 @@ public final class DesktopWindowManager: NSObject {
         super.init()
     }
 
-    public func openSettingsWindow() {
+    public func openSettingsWindow(slot: String = "youtube1") {
+        WidgetViewModel.shared.activeSlot = slot
+
         if let existing = settingsWindow {
+            // Re-assign content view to refresh active slot
+            existing.contentView = NSHostingView(rootView: SettingsView(viewModel: WidgetViewModel.shared))
             existing.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
         }
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 460, height: 490),
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 530),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
         window.center()
-        window.title = "YouTube Widget Ayarları"
+        window.title = "Widget Ayarları & Kanal Değiştir"
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: SettingsView(viewModel: WidgetViewModel.shared))
 

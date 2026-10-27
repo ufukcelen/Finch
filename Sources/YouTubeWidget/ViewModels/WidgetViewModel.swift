@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import AppKit
 
 public enum WidgetSize: String, CaseIterable, Codable, Sendable {
     case small = "small"
@@ -7,15 +8,8 @@ public enum WidgetSize: String, CaseIterable, Codable, Sendable {
 
     public var displayName: String {
         switch self {
-        case .small: return "Küçük (Yalnızca Abone)"
-        case .medium: return "Orta (Abone + Son Shorts)"
-        }
-    }
-
-    public var dimensions: CGSize {
-        switch self {
-        case .small: return CGSize(width: 175, height: 175)
-        case .medium: return CGSize(width: 340, height: 268)
+        case .small: return "Küçük (Yalnızca Abone/Takipçi)"
+        case .medium: return "Orta (Genişletilmiş İstatistik)"
         }
     }
 }
@@ -25,15 +19,18 @@ public final class WidgetViewModel: ObservableObject {
     public static let shared = WidgetViewModel()
 
     // MARK: - Published Properties
-    @Published public var stats: YouTubeStats {
+    @Published public var accounts: [String: SocialAccountStats] = [:] {
         didSet {
-            saveCachedStats()
+            saveAccountsToDisk()
         }
     }
 
-    @Published public var channelInput: String {
+    @Published public var activeSlot: String = "youtube1"
+
+    @Published public var refreshIntervalMinutes: Int {
         didSet {
-            UserDefaults.standard.set(channelInput, forKey: "YTWidget_ChannelInput")
+            UserDefaults.standard.set(refreshIntervalMinutes, forKey: "YTWidget_RefreshInterval")
+            restartTimer()
             syncToSharedData()
         }
     }
@@ -41,176 +38,196 @@ public final class WidgetViewModel: ObservableObject {
     @Published public var apiKey: String {
         didSet {
             UserDefaults.standard.set(apiKey, forKey: "YTWidget_ApiKey")
-            syncToSharedData()
-        }
-    }
-
-    @Published public var refreshIntervalMinutes: Int {
-        didSet {
-            UserDefaults.standard.set(refreshIntervalMinutes, forKey: "YTWidget_RefreshInterval")
-            restartTimer()
-        }
-    }
-
-    @Published public var theme: String {
-        didSet {
-            UserDefaults.standard.set(theme, forKey: "YTWidget_Theme")
-            syncToSharedData()
-        }
-    }
-
-    @Published public var widgetSize: WidgetSize {
-        didSet {
-            UserDefaults.standard.set(widgetSize.rawValue, forKey: "YTWidget_Size")
-            syncToSharedData()
         }
     }
 
     @Published public var isLoading: Bool = false
     @Published public var lastErrorMessage: String? = nil
-    @Published public var isShortHovered: Bool = false
-    @Published public var isSpinning: Bool = false
+
+    // Legacy wrappers for MenuBar & compatibility
+    public var channelInput: String {
+        get { accounts["youtube1"]?.handle ?? "" }
+        set { accounts["youtube1"]?.handle = newValue }
+    }
+
+    public var theme: String {
+        get { accounts["youtube1"]?.theme ?? "red" }
+        set { accounts["youtube1"]?.theme = newValue }
+    }
+
+    public var stats: YouTubeStats {
+        let y = accounts["youtube1"]
+        return YouTubeStats(
+            channelTitle: y?.title ?? "YouTube Widget",
+            handle: y?.handle ?? "@kanal_ayarla",
+            subscriberCount: y?.mainStatCount ?? "--",
+            avatarURL: y?.avatarURL,
+            latestShortTitle: y?.secondaryTitle ?? "",
+            latestShortViews: y?.secondaryValue ?? "--",
+            latestShortThumbnail: y?.thumbnailURL,
+            latestShortURL: y?.contentURL,
+            lastUpdated: y?.lastUpdated ?? Date(),
+            isConfigured: y?.isConfigured ?? false
+        )
+    }
+
+    public var primaryAccountDisplayCount: String {
+        if let y1 = accounts["youtube1"], y1.isConfigured, y1.mainStatCount != "--" {
+            let parts = y1.mainStatCount.split(separator: " ")
+            return String(parts.first ?? "")
+        }
+        return "--"
+    }
+
+    public var hasAnyConfiguredAccount: Bool {
+        accounts.values.contains { $0.isConfigured }
+    }
 
     private var refreshTimer: AnyCancellable?
 
     // MARK: - Init
     public init() {
-        // Load settings from UserDefaults
-        let savedChannel = UserDefaults.standard.string(forKey: "YTWidget_ChannelInput") ?? ""
-        let savedApiKey = UserDefaults.standard.string(forKey: "YTWidget_ApiKey") ?? ""
         let savedInterval = UserDefaults.standard.integer(forKey: "YTWidget_RefreshInterval")
-        let savedSizeStr = UserDefaults.standard.string(forKey: "YTWidget_Size") ?? "medium"
-        let savedTheme = UserDefaults.standard.string(forKey: "YTWidget_Theme") ?? "red"
+        // Allowed intervals: 120 (2h), 360 (6h), 720 (12h), 1440 (24h)
+        let validIntervals = [120, 360, 720, 1440]
+        self.refreshIntervalMinutes = validIntervals.contains(savedInterval) ? savedInterval : 360
+        self.apiKey = UserDefaults.standard.string(forKey: "YTWidget_ApiKey") ?? ""
 
-        self.channelInput = savedChannel
-        self.apiKey = savedApiKey
-        self.refreshIntervalMinutes = savedInterval > 0 ? savedInterval : 15
-        self.widgetSize = WidgetSize(rawValue: savedSizeStr) ?? .medium
-        self.theme = savedTheme
-
-        // Load cached stats
-        if let data = UserDefaults.standard.data(forKey: "YTWidget_CachedStats"),
-           let cached = try? JSONDecoder().decode(YouTubeStats.self, from: data) {
-            self.stats = cached
-        } else {
-            self.stats = YouTubeStats(
-                channelTitle: "YouTube Widget",
-                handle: "@kanal_ayarla",
-                subscriberCount: "--",
-                avatarURL: nil,
-                latestShortTitle: "Ayarlardan YouTube kanalınızı girin",
-                latestShortViews: "--",
-                latestShortThumbnail: nil,
-                latestShortURL: nil,
-                lastUpdated: Date(),
-                isConfigured: false
-            )
+        // Load existing accounts or initialize defaults
+        var loaded = SharedDataManager.shared.loadAccounts() ?? [:]
+        if loaded["youtube1"] == nil {
+            let legacyChannel = UserDefaults.standard.string(forKey: "YTWidget_ChannelInput") ?? ""
+            var sample = SocialAccountStats.defaultSample(for: "youtube1", platform: .youtube)
+            if !legacyChannel.isEmpty {
+                sample.handle = legacyChannel
+                sample.isConfigured = true
+            }
+            loaded["youtube1"] = sample
+        }
+        if loaded["youtube2"] == nil {
+            loaded["youtube2"] = SocialAccountStats.defaultSample(for: "youtube2", platform: .youtube)
+        }
+        if loaded["instagram"] == nil {
+            loaded["instagram"] = SocialAccountStats.defaultSample(for: "instagram", platform: .instagram)
+        }
+        if loaded["tiktok"] == nil {
+            loaded["tiktok"] = SocialAccountStats.defaultSample(for: "tiktok", platform: .tiktok)
         }
 
-        // Start auto-refresh timer
+        self.accounts = loaded
+
+        // Start auto-refresh timer (2h, 6h, 12h, or 24h)
         restartTimer()
 
-        // Sync initial state to SharedDataManager for WidgetKit
+        // Sync to Widget Extension disk container
         syncToSharedData()
 
-        // If channel is configured, refresh immediately on launch
-        if !savedChannel.isEmpty {
-            Task {
-                await self.refresh()
-            }
+        // Refresh configured accounts on launch
+        Task {
+            await self.refreshAll()
         }
     }
 
-    // MARK: - Actions
-    public func toggleSize() {
-        widgetSize = (widgetSize == .small) ? .medium : .small
-    }
-
-    public func refresh() async {
-        let currentChannel = channelInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !currentChannel.isEmpty else {
-            self.lastErrorMessage = "Lütfen önce Ayarlar'dan bir YouTube kanalı girin."
-            return
-        }
-
+    // MARK: - Save & Refresh
+    public func saveAccount(
+        slotID: String,
+        platform: SocialPlatform,
+        input: String,
+        theme: String,
+        apiKey: String?
+    ) async throws {
         isLoading = true
         lastErrorMessage = nil
 
         do {
-            let newStats = try await YouTubeService.shared.fetchStats(
-                channelInput: currentChannel,
-                apiKey: apiKey.isEmpty ? nil : apiKey
+            let newStats = try await SocialService.shared.fetchStats(
+                slotID: slotID,
+                platform: platform,
+                input: input,
+                apiKey: apiKey,
+                theme: theme
             )
-            self.stats = newStats
+            self.accounts[slotID] = newStats
             self.isLoading = false
-            self.lastErrorMessage = nil
             syncToSharedData()
         } catch {
             self.isLoading = false
             self.lastErrorMessage = error.localizedDescription
-            print("[YouTubeWidget Error] \(error.localizedDescription)")
+            throw error
         }
     }
 
+    public func refreshSlot(_ slotID: String) async {
+        guard let acc = accounts[slotID], acc.isConfigured else { return }
+        let input = acc.handle.isEmpty ? acc.title : acc.handle
+        guard !input.isEmpty else { return }
+
+        do {
+            let updated = try await SocialService.shared.fetchStats(
+                slotID: slotID,
+                platform: acc.platform,
+                input: input,
+                apiKey: (acc.platform == .youtube && !apiKey.isEmpty) ? apiKey : nil,
+                theme: acc.theme
+            )
+            self.accounts[slotID] = updated
+            syncToSharedData()
+        } catch {
+            print("[WidgetViewModel] Error refreshing \(slotID): \(error)")
+        }
+    }
+
+    public func refreshAll() async {
+        isLoading = true
+        for slot in ["youtube1", "youtube2", "instagram", "tiktok"] {
+            if let acc = accounts[slot], acc.isConfigured {
+                await refreshSlot(slot)
+            }
+        }
+        isLoading = false
+    }
+
+    // Legacy method for MenuBarView
+    public func refresh() async {
+        await refreshAll()
+    }
+
     public func openChannel() {
-        let clean = channelInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        if clean.lowercased().hasPrefix("http") {
-            if let url = URL(string: clean) {
-                NSWorkspace.shared.open(url)
-            }
-        } else if clean.starts(with: "@") {
-            if let url = URL(string: "https://www.youtube.com/\(clean)") {
-                NSWorkspace.shared.open(url)
-            }
-        } else if clean.starts(with: "UC") && clean.count == 24 {
-            if let url = URL(string: "https://www.youtube.com/channel/\(clean)") {
-                NSWorkspace.shared.open(url)
-            }
-        } else if !stats.handle.isEmpty && stats.handle.starts(with: "@") {
-            if let url = URL(string: "https://www.youtube.com/\(stats.handle)") {
-                NSWorkspace.shared.open(url)
-            }
-        } else {
-            if let url = URL(string: "https://www.youtube.com") {
-                NSWorkspace.shared.open(url)
-            }
+        if let y1 = accounts["youtube1"], let url = URL(string: y1.profileURL) {
+            NSWorkspace.shared.open(url)
         }
     }
 
     public func openLatestShort() {
-        if let shortURL = stats.latestShortURL, let url = URL(string: shortURL) {
+        if let y1 = accounts["youtube1"], let s = y1.contentURL, let url = URL(string: s) {
             NSWorkspace.shared.open(url)
         } else {
             openChannel()
         }
     }
 
+    // MARK: - Private
     private func restartTimer() {
         refreshTimer?.cancel()
-        let intervalSeconds = TimeInterval(max(1, refreshIntervalMinutes) * 60)
+        let intervalSeconds = TimeInterval(max(60, refreshIntervalMinutes) * 60)
         refreshTimer = Timer.publish(every: intervalSeconds, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 Task {
-                    await self.refresh()
+                    await self.refreshAll()
                 }
             }
     }
 
-    private func saveCachedStats() {
-        if let data = try? JSONEncoder().encode(stats) {
-            UserDefaults.standard.set(data, forKey: "YTWidget_CachedStats")
-        }
+    private func saveAccountsToDisk() {
         syncToSharedData()
     }
 
     public func syncToSharedData() {
-        SharedDataManager.shared.save(
-            stats: stats,
-            channelInput: channelInput,
-            apiKey: apiKey.isEmpty ? nil : apiKey,
-            theme: theme
+        SharedDataManager.shared.saveAll(
+            accounts: accounts,
+            refreshIntervalMinutes: refreshIntervalMinutes
         )
     }
 }

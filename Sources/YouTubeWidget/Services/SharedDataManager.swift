@@ -2,24 +2,18 @@ import Foundation
 import WidgetKit
 import AppKit
 
-public struct SharedWidgetConfig: Codable, Sendable {
-    public var channelInput: String
-    public var apiKey: String?
-    public var stats: YouTubeStats
-    public var theme: String // "red", "dark", "glass", "neon"
+public struct MultiSocialWidgetConfig: Codable, Sendable {
+    public var accounts: [String: SocialAccountStats] // "youtube1", "youtube2", "instagram", "tiktok"
+    public var refreshIntervalMinutes: Int
     public var lastSaved: Date
 
     public init(
-        channelInput: String = "",
-        apiKey: String? = nil,
-        stats: YouTubeStats = YouTubeStats(),
-        theme: String = "red",
+        accounts: [String: SocialAccountStats] = [:],
+        refreshIntervalMinutes: Int = 360,
         lastSaved: Date = Date()
     ) {
-        self.channelInput = channelInput
-        self.apiKey = apiKey
-        self.stats = stats
-        self.theme = theme
+        self.accounts = accounts
+        self.refreshIntervalMinutes = refreshIntervalMinutes
         self.lastSaved = lastSaved
     }
 }
@@ -42,17 +36,32 @@ public final class SharedDataManager: @unchecked Sendable {
         self.extContainerDir = extDir
     }
 
-    public func save(stats: YouTubeStats, channelInput: String, apiKey: String? = nil, theme: String = "red") {
-        let config = SharedWidgetConfig(
-            channelInput: channelInput,
-            apiKey: apiKey,
-            stats: stats,
-            theme: theme,
-            lastSaved: Date()
-        )
+    public func saveAll(accounts: [String: SocialAccountStats], refreshIntervalMinutes: Int) {
+        var configDict: [String: Any] = [:]
+        configDict["refreshIntervalMinutes"] = refreshIntervalMinutes
+        configDict["lastSaved"] = Date().timeIntervalSince1970
+
+        var accountsDict: [String: Any] = [:]
+        for (key, acc) in accounts {
+            if let data = try? JSONEncoder().encode(acc),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                accountsDict[key] = json
+            }
+        }
+        configDict["accounts"] = accountsDict
+
+        // Also add root-level legacy keys for the primary youtube1 account for backward compatibility
+        if let primary = accounts["youtube1"] ?? accounts.values.first {
+            configDict["channelInput"] = primary.handle
+            configDict["theme"] = primary.theme
+            if let data = try? JSONEncoder().encode(primary),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                configDict["stats"] = json
+            }
+        }
 
         do {
-            let data = try JSONEncoder().encode(config)
+            let data = try JSONSerialization.data(withJSONObject: configDict, options: [.prettyPrinted])
 
             // 1. Write to Main App Application Support
             try data.write(to: mainFileURL, options: .atomic)
@@ -61,49 +70,105 @@ public final class SharedDataManager: @unchecked Sendable {
             try? FileManager.default.createDirectory(at: extContainerDir, withIntermediateDirectories: true)
             let extFileURL = extContainerDir.appendingPathComponent("shared_data.json")
             try data.write(to: extFileURL, options: .atomic)
-            
-            // 3. Cache avatar and thumbnail locally on disk
-            cacheImagesLocally(stats: stats)
+
+            // 3. Cache images for all slots
+            cacheAllImages(accounts: Array(accounts.values))
         } catch {
-            print("[SharedDataManager] Error saving shared data: \(error)")
+            print("[SharedDataManager] Error saving multi-widget shared data: \(error)")
         }
+
+        // Invalidate chronod cache so it immediately repaints the native desktop widget
+        let userHome = FileManager.default.homeDirectoryForCurrentUser
+        let chronoPlaceholders = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/SystemData/com.apple.chrono/placeholders", isDirectory: true)
+        try? FileManager.default.removeItem(at: chronoPlaceholders)
 
         // Notify WidgetKit
         WidgetCenter.shared.reloadAllTimelines()
     }
 
-    private func cacheImagesLocally(stats: YouTubeStats) {
+    public func save(stats: YouTubeStats, channelInput: String, apiKey: String?, theme: String) {
+        let ytAccount = SocialAccountStats(
+            slotID: "youtube1",
+            platform: .youtube,
+            title: stats.channelTitle,
+            handle: stats.handle,
+            mainStatCount: stats.subscriberCount,
+            secondaryTitle: stats.latestShortTitle,
+            secondaryValue: stats.latestShortViews,
+            avatarURL: stats.avatarURL,
+            thumbnailURL: stats.latestShortThumbnail,
+            profileURL: stats.handle.starts(with: "@") ? "https://www.youtube.com/\(stats.handle)" : "https://www.youtube.com",
+            contentURL: stats.latestShortURL,
+            theme: theme,
+            lastUpdated: stats.lastUpdated,
+            isConfigured: stats.isConfigured
+        )
+
+        var existing = loadAccounts() ?? [:]
+        existing["youtube1"] = ytAccount
+        let interval = loadRefreshInterval()
+        saveAll(accounts: existing, refreshIntervalMinutes: interval)
+    }
+
+    private func cacheAllImages(accounts: [SocialAccountStats]) {
         Task {
-            if let avatarStr = stats.avatarURL, let url = URL(string: avatarStr),
-               let (data, _) = try? await URLSession.shared.data(from: url) {
-                let extAvatar = self.extContainerDir.appendingPathComponent("avatar.png")
-                try? data.write(to: extAvatar)
-                let mainAvatar = self.mainFileURL.deletingLastPathComponent().appendingPathComponent("avatar.png")
-                try? data.write(to: mainAvatar)
-            }
+            for acc in accounts {
+                let slot = acc.slotID
 
-            if let thumbStr = stats.latestShortThumbnail, let url = URL(string: thumbStr),
-               let (data, _) = try? await URLSession.shared.data(from: url) {
-                let extThumb = self.extContainerDir.appendingPathComponent("thumbnail.png")
-                try? data.write(to: extThumb)
-                let mainThumb = self.mainFileURL.deletingLastPathComponent().appendingPathComponent("thumbnail.png")
-                try? data.write(to: mainThumb)
-            }
+                // Avatar
+                if let avatarStr = acc.avatarURL, let url = URL(string: avatarStr),
+                   let (data, _) = try? await URLSession.shared.data(from: url) {
+                    let extAvatar = self.extContainerDir.appendingPathComponent("avatar_\(slot).png")
+                    try? data.write(to: extAvatar)
+                    let mainAvatar = self.mainFileURL.deletingLastPathComponent().appendingPathComponent("avatar_\(slot).png")
+                    try? data.write(to: mainAvatar)
+                    if slot == "youtube1" {
+                        try? data.write(to: self.extContainerDir.appendingPathComponent("avatar.png"))
+                    }
+                }
 
-            // Invalidate chronod cache so it immediately repaints the native desktop widget
-            let userHome = FileManager.default.homeDirectoryForCurrentUser
-            let chronoPlaceholders = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/SystemData/com.apple.chrono/placeholders", isDirectory: true)
-            try? FileManager.default.removeItem(at: chronoPlaceholders)
+                // Thumbnail / Video Cover
+                if let thumbStr = acc.thumbnailURL, let url = URL(string: thumbStr),
+                   let (data, _) = try? await URLSession.shared.data(from: url) {
+                    let extThumb = self.extContainerDir.appendingPathComponent("thumbnail_\(slot).png")
+                    try? data.write(to: extThumb)
+                    let mainThumb = self.mainFileURL.deletingLastPathComponent().appendingPathComponent("thumbnail_\(slot).png")
+                    try? data.write(to: mainThumb)
+                    if slot == "youtube1" {
+                        try? data.write(to: self.extContainerDir.appendingPathComponent("thumbnail.png"))
+                    }
+                }
+            }
 
             WidgetCenter.shared.reloadAllTimelines()
         }
     }
 
-    public func load() -> SharedWidgetConfig? {
-        if let data = try? Data(contentsOf: mainFileURL),
-           let config = try? JSONDecoder().decode(SharedWidgetConfig.self, from: data) {
-            return config
+    public func loadAccounts() -> [String: SocialAccountStats]? {
+        let fileToRead = FileManager.default.fileExists(atPath: mainFileURL.path) ? mainFileURL : extContainerDir.appendingPathComponent("shared_data.json")
+        guard let data = try? Data(contentsOf: fileToRead),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let accountsDict = json["accounts"] as? [String: [String: Any]] else {
+            return nil
         }
-        return nil
+
+        var result: [String: SocialAccountStats] = [:]
+        for (key, dict) in accountsDict {
+            if let accData = try? JSONSerialization.data(withJSONObject: dict),
+               let acc = try? JSONDecoder().decode(SocialAccountStats.self, from: accData) {
+                result[key] = acc
+            }
+        }
+        return result
+    }
+
+    public func loadRefreshInterval() -> Int {
+        let fileToRead = FileManager.default.fileExists(atPath: mainFileURL.path) ? mainFileURL : extContainerDir.appendingPathComponent("shared_data.json")
+        if let data = try? Data(contentsOf: fileToRead),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let interval = json["refreshIntervalMinutes"] as? Int, interval > 0 {
+            return interval
+        }
+        return 360 // Default 6 hours
     }
 }

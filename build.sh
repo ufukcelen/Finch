@@ -5,7 +5,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DIR"
 
 echo "=========================================="
-echo "  🎬 YouTube macOS Widget Derleniyor...  "
+echo "  🎬 YouTube macOS Widget v0.0.3 Derleniyor...  "
 echo "=========================================="
 
 # 1. Swift Ana Paket Derleme (Release)
@@ -60,19 +60,31 @@ cat << 'EOF' > "$CONTENTS_DIR/Info.plist"
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>0.0.3</string>
     <key>CFBundleSupportedPlatforms</key>
     <array>
         <string>MacOSX</string>
     </array>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>3</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.ufukcelen.youtubewidget</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>youtubewidget</string>
+                <string>socialwidget</string>
+            </array>
+        </dict>
+    </array>
     <key>NSAppTransportSecurity</key>
     <dict>
         <key>NSAllowsArbitraryLoads</key>
@@ -83,7 +95,7 @@ cat << 'EOF' > "$CONTENTS_DIR/Info.plist"
 EOF
 
 # 4. Yerel Apple WidgetKit Uzantısı (.appex) Derleme
-echo "🧩 3. macOS WidgetKit Uzantısı derleniyor (Small & Medium)..."
+echo "🧩 3. macOS WidgetKit Uzantısı derleniyor (Multi-Widget Bundle)..."
 EXTENSION_DIR="$PLUGINS_DIR/YouTubeWidgetExtension.appex"
 EXT_CONTENTS="$EXTENSION_DIR/Contents"
 EXT_MACOS="$EXT_CONTENTS/MacOS"
@@ -96,6 +108,7 @@ swiftc -parse-as-library -O \
     -framework Foundation \
     -target arm64-apple-macos14.0 \
     -Xlinker -e -Xlinker _NSExtensionMain \
+    "$DIR/Sources/YouTubeWidget/Models/SocialStats.swift" \
     "$DIR/Sources/YouTubeWidgetExtension/YouTubeWidgetExtension.swift" \
     -o "$EXT_MACOS/YouTubeWidgetExtension"
 
@@ -122,13 +135,13 @@ cat << 'EOF' > "$EXT_CONTENTS/Info.plist"
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>0.0.3</string>
     <key>CFBundleSupportedPlatforms</key>
     <array>
         <string>MacOSX</string>
     </array>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>3</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>NSExtension</key>
@@ -169,13 +182,14 @@ pluginkit -e use -i com.ufukcelen.youtubewidget.extension 2>/dev/null || true
 killall -9 chronod 2>/dev/null || true
 
 echo "=========================================="
-echo "✅ Tamamlandı! YouTubeWidget başarıyla kuruldu:"
+echo "✅ Tamamlandı! YouTubeWidget v0.0.3 başarıyla kuruldu:"
 echo "   📍 /Applications/YouTubeWidget.app"
-echo "   🧩 WidgetKit Uzantısı: Aktif (Küçük & Orta)"
+echo "   🧩 WidgetKit Uzantısı: Aktif (Multi-Widget: YouTube 1, YouTube 2, Instagram, TikTok)"
 echo "=========================================="
 
 if [[ "$*" == *"--run"* ]]; then
     echo "▶️  Uygulama başlatılıyor..."
     killall YouTubeWidget 2>/dev/null || true
+    sleep 0.5
     open "/Applications/YouTubeWidget.app"
 fi

@@ -9,48 +9,53 @@ public struct MenuBarView: View {
 
     public var body: some View {
         VStack {
-            // Channel Info Header
-            if viewModel.stats.isConfigured {
-                Text("\(viewModel.stats.channelTitle) (\(viewModel.stats.handle))")
+            // Social Accounts Summary
+            let y1 = viewModel.accounts["youtube1"]
+            if let y1 = y1, y1.isConfigured {
+                Text("🔴 YouTube (1): \(y1.title) (\(y1.mainStatCount))")
                     .font(.headline)
-
-                Text("👥 Abone Sayısı: \(viewModel.stats.subscriberCount)")
-
-                if !viewModel.stats.latestShortTitle.isEmpty {
-                    Text("🎬 Son Shorts: \(viewModel.stats.latestShortTitle)")
-                    Text("🔥 İzlenme: \(viewModel.stats.latestShortViews)")
-                }
             } else {
-                Text("YouTube Widget (Kanal Ayarlanmadı)")
+                Text("🔴 YouTube Widget (Kanal Ayarlanmadı)")
                     .font(.headline)
+            }
+
+            if let y2 = viewModel.accounts["youtube2"], y2.isConfigured {
+                Text("🔴 YouTube (2): \(y2.title) (\(y2.mainStatCount))")
+                    .font(.caption)
+            }
+
+            if let ig = viewModel.accounts["instagram"], ig.isConfigured {
+                Text("📸 Instagram: \(ig.title) (\(ig.mainStatCount) Takipçi)")
+                    .font(.caption)
+            }
+
+            if let tt = viewModel.accounts["tiktok"], tt.isConfigured {
+                Text("🎵 TikTok: \(tt.title) (\(tt.mainStatCount) Takipçi)")
+                    .font(.caption)
             }
 
             Divider()
 
             // Quick Links
-            Button("YouTube'da Kanalı Aç") {
-                viewModel.openChannel()
-            }
-
-            if viewModel.stats.latestShortURL != nil {
-                Button("Son Shorts Videosunu Aç") {
-                    viewModel.openLatestShort()
+            if let y1 = y1, y1.isConfigured {
+                Button("YouTube Kanalını Aç") {
+                    viewModel.openChannel()
                 }
+
+                if y1.contentURL != nil {
+                    Button("Son Shorts Videosunu Aç") {
+                        viewModel.openLatestShort()
+                    }
+                }
+                Divider()
             }
 
-            Divider()
-
-            // Refresh & Settings
-            Button("Şimdi Yenile") {
+            // Refresh All
+            Button("Tümünü Şimdi Yenile") {
                 Task {
-                    await viewModel.refresh()
+                    await viewModel.refreshAll()
                 }
             }
-
-            Button("Ayarlar & Kanal Değiştir...") {
-                DesktopWindowManager.shared.openSettingsWindow()
-            }
-            .keyboardShortcut(",", modifiers: .command)
 
             Divider()
 
