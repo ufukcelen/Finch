@@ -1,32 +1,20 @@
 import SwiftUI
 
-public final class SettingsState: ObservableObject {
-    @Published public var activeSlot: String = "youtube1"
-    @Published public var inputHandle: String = ""
-    @Published public var inputApiKey: String = ""
-    @Published public var selectedInterval: Int = 360
-    @Published public var selectedTheme: String = "red"
-    @Published public var isTesting: Bool = false
-    @Published public var testResult: String? = nil
-    @Published public var isSuccess: Bool = false
-
-    public init() {}
+final class SettingsTesterState: ObservableObject {
+    @Published var selectedPlatform: SocialPlatform = .youtube
+    @Published var inputHandle: String = "@barisozcan"
+    @Published var inputApiKey: String = ""
+    @Published var isTesting: Bool = false
+    @Published var testResult: String? = nil
+    @Published var isSuccess: Bool = false
 }
 
 public struct SettingsView: View {
     @ObservedObject var viewModel: WidgetViewModel
-    @StateObject private var state = SettingsState()
+    @StateObject private var state = SettingsTesterState()
 
     public init(viewModel: WidgetViewModel) {
         self.viewModel = viewModel
-    }
-
-    private var activePlatform: SocialPlatform {
-        switch state.activeSlot {
-        case "instagram": return .instagram
-        case "tiktok": return .tiktok
-        default: return .youtube
-        }
     }
 
     public var body: some View {
@@ -42,67 +30,75 @@ public struct SettingsView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 38, height: 38)
+                        .frame(width: 40, height: 40)
 
-                    Image(systemName: activePlatform.iconName)
-                        .font(.system(size: 18, weight: .bold))
+                    Image(systemName: state.selectedPlatform.iconName)
+                        .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Widget Ayarları & Kanal Değiştir")
+                    Text("Sosyal Medya Widget Yöneticisi")
                         .font(.headline)
-                    Text("Widget kütüphanesinden eklenen her widgeti dilediğiniz hesaba bağlayın.")
+                    Text("Masaüstü widget'larınız için hesap test edin ve doğrulayın.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
 
                 Spacer()
+
+                Text("v0.0.3")
+                    .font(.caption2.bold())
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Color.primary.opacity(0.08)))
             }
             .padding()
             .background(Color.primary.opacity(0.04))
 
             Divider()
 
-            // Slot Tabs (Segmented Control)
-            VStack(spacing: 6) {
-                HStack {
-                    Text("Yapılandırılan Widget:")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.secondary)
-                    Spacer()
-                }
-
-                Picker("", selection: $state.activeSlot) {
-                    Text("🔴 YouTube (1)").tag("youtube1")
-                    Text("🔴 YouTube (2)").tag("youtube2")
-                    Text("📸 Instagram").tag("instagram")
-                    Text("🎵 TikTok").tag("tiktok")
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: state.activeSlot) { newSlot in
-                    loadSlotData(newSlot)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.top, 10)
-            .padding(.bottom, 6)
-
-            Divider()
-
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    // MARK: - Section 1: Channel / Account Input
+                VStack(alignment: .leading, spacing: 16) {
+                    // How-To Card
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(.accentColor)
+                            .font(.system(size: 16))
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Masaüstünde Her Widget'a Özel Ayar:")
+                                .font(.system(size: 12, weight: .bold))
+                            Text("Masaüstünüze eklediğiniz her widget'a sağ tıklayıp **'Widget'ı Düzenle...'** seçeneğini seçerek o widget'a özel platformu (YouTube, Instagram, TikTok), kanalı ve 2-6-12-24 saatlik yenileme süresini ayrı ayrı belirleyebilirsiniz.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.accentColor.opacity(0.08))
+                    )
+
+                    // Platform Picker
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Label(inputSectionTitle, systemImage: activePlatform.iconName)
-                                .font(.system(size: 13, weight: .bold))
-                            Spacer()
-                            if let acc = viewModel.accounts[state.activeSlot], acc.isConfigured {
-                                Text("Mevcut: \(acc.mainStatCount)")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(.green)
+                        Text("Hesap Test Et / Doğrula:")
+                            .font(.system(size: 12, weight: .bold))
+
+                        Picker("", selection: $state.selectedPlatform) {
+                            Text("🔴 YouTube").tag(SocialPlatform.youtube)
+                            Text("📸 Instagram").tag(SocialPlatform.instagram)
+                            Text("🎵 TikTok").tag(SocialPlatform.tiktok)
+                        }
+                        .pickerStyle(.segmented)
+                        .onChange(of: state.selectedPlatform) { newPlat in
+                            switch newPlat {
+                            case .youtube: state.inputHandle = "@barisozcan"
+                            case .instagram: state.inputHandle = "@instagram"
+                            case .tiktok: state.inputHandle = "@tiktok"
                             }
+                            state.testResult = nil
                         }
 
                         VStack(alignment: .leading, spacing: 5) {
@@ -140,7 +136,7 @@ public struct SettingsView: View {
                                     .foregroundColor(state.isSuccess ? .green : .red)
                                     .lineLimit(2)
                             }
-                            .padding(.top, 2)
+                            .padding(.top, 4)
                         }
                     }
                     .padding()
@@ -149,55 +145,8 @@ public struct SettingsView: View {
                             .fill(Color.primary.opacity(0.03))
                     )
 
-                    // MARK: - Section 2: Widget Theme & Customization
-                    VStack(alignment: .leading, spacing: 12) {
-                        Label("Görünüm & Tema", systemImage: "paintbrush.fill")
-                            .font(.system(size: 13, weight: .bold))
-
-                        HStack {
-                            Text("Widget Teması:")
-                                .font(.system(size: 12, weight: .medium))
-                            Spacer()
-                            Picker("", selection: $state.selectedTheme) {
-                                Text("🔴 Canlı Kırmızı").tag("red")
-                                Text("⬛️ Koyu Titanyum").tag("dark")
-                                Text("🪟 Buzlu Cam (Şeffaf)").tag("glass")
-                                Text("🟣 Siber Mor Neon").tag("neon")
-                            }
-                            .pickerStyle(.menu)
-                            .frame(width: 200)
-                        }
-
-                        Divider()
-
-                        // MARK: - Update Interval (2h, 6h, 12h, 24h as requested)
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Otomatik Güncelleme:")
-                                    .font(.system(size: 12, weight: .medium))
-                                Text("Sistemi ve pili yormamak için periyot seçin")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
-                            }
-                            Spacer()
-                            Picker("", selection: $state.selectedInterval) {
-                                Text("2 Saat").tag(120)
-                                Text("6 Saat (Önerilen)").tag(360)
-                                Text("12 Saat").tag(720)
-                                Text("24 Saat").tag(1440)
-                            }
-                            .pickerStyle(.menu)
-                            .frame(width: 160)
-                        }
-                    }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.primary.opacity(0.03))
-                    )
-
-                    // MARK: - Section 3: Optional YouTube API Key
-                    if activePlatform == .youtube {
+                    // YouTube API Key (Optional)
+                    if state.selectedPlatform == .youtube {
                         DisclosureGroup {
                             VStack(alignment: .leading, spacing: 6) {
                                 TextField("AIzaSy...", text: $state.inputApiKey)
@@ -226,38 +175,32 @@ public struct SettingsView: View {
 
             // Footer
             HStack {
-                Button(sampleButtonLabel) {
-                    fillSample()
+                Button("Örnek Doldur") {
+                    switch state.selectedPlatform {
+                    case .youtube: state.inputHandle = "@barisozcan"
+                    case .instagram: state.inputHandle = "@instagram"
+                    case .tiktok: state.inputHandle = "@tiktok"
+                    }
+                    testConnection()
                 }
                 .buttonStyle(.link)
                 .font(.system(size: 11))
 
                 Spacer()
 
-                Button("İptal") {
+                Button("Kapat") {
                     DesktopWindowManager.shared.closeSettingsWindow()
                 }
                 .keyboardShortcut(.cancelAction)
-
-                Button("Kaydet & Uygula") {
-                    saveAndApply()
-                }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
             }
             .padding()
             .background(Color.primary.opacity(0.02))
         }
-        .frame(width: 480, height: 530)
-        .onAppear {
-            state.activeSlot = viewModel.activeSlot
-            loadSlotData(viewModel.activeSlot)
-        }
+        .frame(width: 480, height: 490)
     }
 
-    // MARK: - UI Helpers
     private var headerColors: [Color] {
-        switch activePlatform {
+        switch state.selectedPlatform {
         case .youtube:
             return [Color(red: 1.0, green: 0.1, blue: 0.1), Color(red: 0.8, green: 0.0, blue: 0.0)]
         case .instagram:
@@ -267,63 +210,19 @@ public struct SettingsView: View {
         }
     }
 
-    private var inputSectionTitle: String {
-        switch state.activeSlot {
-        case "youtube1": return "YouTube Ana Kanalı"
-        case "youtube2": return "YouTube 2. Kanalı"
-        case "instagram": return "Instagram Hesabı"
-        case "tiktok": return "TikTok Hesabı"
-        default: return "Sosyal Medya Hesabı"
-        }
-    }
-
     private var inputPlaceholder: String {
-        switch activePlatform {
-        case .youtube: return "Örn: @barisozcan veya @UykusuzTosba"
+        switch state.selectedPlatform {
+        case .youtube: return "Örn: @barisozcan veya kanal linki"
         case .instagram: return "Örn: @instagram veya @barisozcan"
-        case .tiktok: return "Örn: @tiktok veya @mrbeast"
+        case .tiktok: return "Örn: @tiktok"
         }
     }
 
     private var inputDescription: String {
-        switch activePlatform {
-        case .youtube:
-            return "YouTube kullanıcı adınızı (@kullanici), kanal URL'nizi veya Kanal ID'nizi yazabilirsiniz."
-        case .instagram:
-            return "Instagram kullanıcı adınızı (@kullanici) girin. Profilinizin açık olması yeterlidir."
-        case .tiktok:
-            return "TikTok kullanıcı adınızı (@kullanici) girin. Herhangi bir şifre gerekmez."
-        }
-    }
-
-    private var sampleButtonLabel: String {
-        switch activePlatform {
-        case .youtube: return "Örnek Doldur (@barisozcan)"
-        case .instagram: return "Örnek Doldur (@instagram)"
-        case .tiktok: return "Örnek Doldur (@tiktok)"
-        }
-    }
-
-    private func fillSample() {
-        switch activePlatform {
-        case .youtube: state.inputHandle = "@barisozcan"
-        case .instagram: state.inputHandle = "@instagram"
-        case .tiktok: state.inputHandle = "@tiktok"
-        }
-        testConnection()
-    }
-
-    private func loadSlotData(_ slot: String) {
-        state.testResult = nil
-        state.selectedInterval = viewModel.refreshIntervalMinutes
-        state.inputApiKey = viewModel.apiKey
-
-        if let acc = viewModel.accounts[slot] {
-            state.inputHandle = acc.handle.isEmpty ? acc.title : acc.handle
-            state.selectedTheme = acc.theme
-        } else {
-            state.inputHandle = ""
-            state.selectedTheme = activePlatform == .instagram ? "purple" : (activePlatform == .tiktok ? "neon" : "red")
+        switch state.selectedPlatform {
+        case .youtube: return "YouTube kullanıcı adınızı (@kullanici), kanal URL'nizi veya Kanal ID'nizi yazabilirsiniz."
+        case .instagram: return "Instagram kullanıcı adınızı (@kullanici) girin. Profilinizin açık olması yeterlidir."
+        case .tiktok: return "TikTok kullanıcı adınızı (@kullanici) girin. Herhangi bir şifre gerekmez."
         }
     }
 
@@ -334,19 +233,17 @@ public struct SettingsView: View {
         state.isTesting = true
         state.testResult = nil
 
-        let slot = state.activeSlot
-        let plat = activePlatform
+        let plat = state.selectedPlatform
         let key = state.inputApiKey.isEmpty ? nil : state.inputApiKey
-        let theme = state.selectedTheme
 
         Task {
             do {
                 let stats = try await SocialService.shared.fetchStats(
-                    slotID: slot,
+                    slotID: "test",
                     platform: plat,
                     input: clean,
                     apiKey: key,
-                    theme: theme
+                    theme: "red"
                 )
                 await MainActor.run {
                     self.state.isTesting = false
@@ -361,36 +258,5 @@ public struct SettingsView: View {
                 }
             }
         }
-    }
-
-    private func saveAndApply() {
-        let clean = state.inputHandle.trimmingCharacters(in: .whitespacesAndNewlines)
-        let slot = state.activeSlot
-        let plat = activePlatform
-        let theme = state.selectedTheme
-        let key = state.inputApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        viewModel.refreshIntervalMinutes = state.selectedInterval
-        if !key.isEmpty {
-            viewModel.apiKey = key
-        }
-
-        Task {
-            if !clean.isEmpty {
-                try? await viewModel.saveAccount(
-                    slotID: slot,
-                    platform: plat,
-                    input: clean,
-                    theme: theme,
-                    apiKey: key.isEmpty ? nil : key
-                )
-            } else if var acc = viewModel.accounts[slot] {
-                acc.theme = theme
-                viewModel.accounts[slot] = acc
-                viewModel.syncToSharedData()
-            }
-        }
-
-        DesktopWindowManager.shared.closeSettingsWindow()
     }
 }

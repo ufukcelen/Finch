@@ -11,12 +11,8 @@ public final class DesktopWindowManager: NSObject {
         super.init()
     }
 
-    public func openSettingsWindow(slot: String = "youtube1") {
-        WidgetViewModel.shared.activeSlot = slot
-
+    public func openSettingsWindow() {
         if let existing = settingsWindow {
-            // Re-assign content view to refresh active slot
-            existing.contentView = NSHostingView(rootView: SettingsView(viewModel: WidgetViewModel.shared))
             existing.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -29,7 +25,7 @@ public final class DesktopWindowManager: NSObject {
             defer: false
         )
         window.center()
-        window.title = "Widget Ayarları & Kanal Değiştir"
+        window.title = "Sosyal Medya Widget Ayarları & Test"
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: SettingsView(viewModel: WidgetViewModel.shared))
 

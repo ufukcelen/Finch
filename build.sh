@@ -95,7 +95,7 @@ cat << 'EOF' > "$CONTENTS_DIR/Info.plist"
 EOF
 
 # 4. Yerel Apple WidgetKit Uzantısı (.appex) Derleme
-echo "🧩 3. macOS WidgetKit Uzantısı derleniyor (Multi-Widget Bundle)..."
+echo "🧩 3. macOS WidgetKit Uzantısı derleniyor (Tekil Widget: YouTube & Sosyal Takip)..."
 EXTENSION_DIR="$PLUGINS_DIR/YouTubeWidgetExtension.appex"
 EXT_CONTENTS="$EXTENSION_DIR/Contents"
 EXT_MACOS="$EXT_CONTENTS/MacOS"
@@ -104,11 +104,15 @@ mkdir -p "$EXT_MACOS"
 swiftc -parse-as-library -O \
     -framework WidgetKit \
     -framework SwiftUI \
+    -framework AppIntents \
     -framework AppKit \
     -framework Foundation \
     -target arm64-apple-macos14.0 \
     -Xlinker -e -Xlinker _NSExtensionMain \
+    "$DIR/Sources/YouTubeWidget/Models/YouTubeStats.swift" \
     "$DIR/Sources/YouTubeWidget/Models/SocialStats.swift" \
+    "$DIR/Sources/YouTubeWidget/Services/YouTubeService.swift" \
+    "$DIR/Sources/YouTubeWidget/Services/SocialService.swift" \
     "$DIR/Sources/YouTubeWidgetExtension/YouTubeWidgetExtension.swift" \
     -o "$EXT_MACOS/YouTubeWidgetExtension"
 
@@ -184,7 +188,7 @@ killall -9 chronod 2>/dev/null || true
 echo "=========================================="
 echo "✅ Tamamlandı! YouTubeWidget v0.0.3 başarıyla kuruldu:"
 echo "   📍 /Applications/YouTubeWidget.app"
-echo "   🧩 WidgetKit Uzantısı: Aktif (Multi-Widget: YouTube 1, YouTube 2, Instagram, TikTok)"
+echo "   🧩 WidgetKit Uzantısı: Aktif (Tekil Widget: YouTube & Sosyal Takip - Küçük & Orta)"
 echo "=========================================="
 
 if [[ "$*" == *"--run"* ]]; then

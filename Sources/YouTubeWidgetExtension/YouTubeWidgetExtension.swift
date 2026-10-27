@@ -1,6 +1,89 @@
 import WidgetKit
 import SwiftUI
 import AppKit
+import AppIntents
+
+// MARK: - App Intents (Per-Widget Configuration on Desktop)
+@available(macOS 14.0, *)
+public enum WidgetPlatform: String, AppEnum, Sendable {
+    case youtube = "YouTube"
+    case instagram = "Instagram"
+    case tiktok = "TikTok"
+
+    public static var typeDisplayRepresentation: TypeDisplayRepresentation = "Platform"
+    public static var caseDisplayRepresentations: [WidgetPlatform: DisplayRepresentation] = [
+        .youtube: "🔴 YouTube",
+        .instagram: "📸 Instagram",
+        .tiktok: "🎵 TikTok"
+    ]
+
+    public func toSocialPlatform() -> SocialPlatform {
+        switch self {
+        case .youtube: return .youtube
+        case .instagram: return .instagram
+        case .tiktok: return .tiktok
+        }
+    }
+}
+
+@available(macOS 14.0, *)
+public enum WidgetRefreshInterval: Int, AppEnum, Sendable {
+    case twoHours = 2
+    case sixHours = 6
+    case twelveHours = 12
+    case twentyFourHours = 24
+
+    public static var typeDisplayRepresentation: TypeDisplayRepresentation = "Yenileme Sıklığı"
+    public static var caseDisplayRepresentations: [WidgetRefreshInterval: DisplayRepresentation] = [
+        .twoHours: "2 Saat",
+        .sixHours: "6 Saat (Önerilen)",
+        .twelveHours: "12 Saat",
+        .twentyFourHours: "24 Saat"
+    ]
+}
+
+@available(macOS 14.0, *)
+public enum WidgetTheme: String, AppEnum, Sendable {
+    case red = "red"
+    case dark = "dark"
+    case glass = "glass"
+    case neon = "neon"
+
+    public static var typeDisplayRepresentation: TypeDisplayRepresentation = "Görünüm Teması"
+    public static var caseDisplayRepresentations: [WidgetTheme: DisplayRepresentation] = [
+        .red: "🔴 Canlı Kırmızı",
+        .dark: "⬛️ Koyu Titanyum",
+        .glass: "🪟 Buzlu Cam",
+        .neon: "🟣 Siber Mor Neon"
+    ]
+}
+
+@available(macOS 14.0, *)
+public struct SelectAccountIntent: WidgetConfigurationIntent {
+    public static var title: LocalizedStringResource = "Sosyal Widget Ayarları"
+    public static var description = IntentDescription("Bu widget'ın platformunu, kanalını ve güncelleme sıklığını belirleyin.")
+
+    @Parameter(title: "Platform", default: .youtube)
+    public var platform: WidgetPlatform
+
+    @Parameter(title: "Kanal / Kullanıcı Adı", default: "@barisozcan")
+    public var accountHandle: String
+
+    @Parameter(title: "Yenileme Sıklığı", default: .sixHours)
+    public var refreshInterval: WidgetRefreshInterval
+
+    @Parameter(title: "Görünüm Teması", default: .red)
+    public var theme: WidgetTheme
+
+    public init() {}
+
+    public init(platform: WidgetPlatform, accountHandle: String, refreshInterval: WidgetRefreshInterval = .sixHours, theme: WidgetTheme = .red) {
+        self.platform = platform
+        self.accountHandle = accountHandle
+        self.refreshInterval = refreshInterval
+        self.theme = theme
+    }
+}
 
 // MARK: - Timeline Entry
 struct SocialTimelineEntry: TimelineEntry {
@@ -10,93 +93,121 @@ struct SocialTimelineEntry: TimelineEntry {
     let thumbnailImage: NSImage?
 }
 
-// MARK: - Timeline Provider
-struct SocialTimelineProvider: TimelineProvider {
-    let slotID: String
-    let defaultPlatform: SocialPlatform
-
+// MARK: - Timeline Provider (Fetches Independently for Each Desktop Instance)
+@available(macOS 14.0, *)
+struct SocialAppIntentTimelineProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SocialTimelineEntry {
-        loadEntry()
+        let sample = SocialAccountStats.defaultSample(for: "placeholder", platform: .youtube)
+        return SocialTimelineEntry(date: Date(), stats: sample, avatarImage: nil, thumbnailImage: nil)
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (SocialTimelineEntry) -> Void) {
-        completion(loadEntry())
+    func snapshot(for configuration: SelectAccountIntent, in context: Context) async -> SocialTimelineEntry {
+        let platform = configuration.platform.toSocialPlatform()
+        let handle = configuration.accountHandle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let theme = configuration.theme.rawValue
+        let entry = await getEntry(platform: platform, handle: handle, theme: theme)
+        return entry
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<SocialTimelineEntry>) -> Void) {
-        let entry = loadEntry()
-        let interval = loadRefreshInterval()
-        let nextUpdate = Calendar.current.date(byAdding: .minute, value: interval, to: Date()) ?? Date().addingTimeInterval(TimeInterval(interval * 60))
-        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-        completion(timeline)
+    func timeline(for configuration: SelectAccountIntent, in context: Context) async -> Timeline<SocialTimelineEntry> {
+        let platform = configuration.platform.toSocialPlatform()
+        let handle = configuration.accountHandle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let theme = configuration.theme.rawValue
+        let intervalHours = configuration.refreshInterval.rawValue
+
+        let entry = await getEntry(platform: platform, handle: handle, theme: theme)
+
+        // Schedule next refresh strictly according to this widget instance's chosen interval
+        let nextDate = Calendar.current.date(byAdding: .hour, value: intervalHours, to: Date())
+            ?? Date().addingTimeInterval(TimeInterval(intervalHours * 3600))
+        return Timeline(entries: [entry], policy: .after(nextDate))
     }
 
-    private func loadEntry() -> SocialTimelineEntry {
-        let stats = loadSharedStats(for: slotID) ?? SocialAccountStats.defaultSample(for: slotID, platform: defaultPlatform)
-        let avatar = loadLocalImage(named: "avatar_\(slotID).png", fallbackName: slotID == "youtube1" ? "avatar.png" : nil)
-        let thumb = loadLocalImage(named: "thumbnail_\(slotID).png", fallbackName: slotID == "youtube1" ? "thumbnail.png" : nil)
-        return SocialTimelineEntry(date: Date(), stats: stats, avatarImage: avatar, thumbnailImage: thumb)
-    }
+    private func getEntry(platform: SocialPlatform, handle: String, theme: String) async -> SocialTimelineEntry {
+        let cleanHandle = handle.isEmpty ? (platform == .youtube ? "@barisozcan" : "@instagram") : handle
+        let safeKey = "\(platform.rawValue)_\(cleanHandle.replacingOccurrences(of: "@", with: "").replacingOccurrences(of: "/", with: "_"))"
 
-    private func loadSharedStats(for slot: String) -> SocialAccountStats? {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let fileURL = appSupport.appendingPathComponent("YouTubeWidget/shared_data.json")
-
-        guard let data = try? Data(contentsOf: fileURL),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return nil
+        // 1. Try to fetch live stats directly
+        var stats: SocialAccountStats? = nil
+        do {
+            stats = try await SocialService.shared.fetchStats(
+                slotID: safeKey,
+                platform: platform,
+                input: cleanHandle,
+                apiKey: nil,
+                theme: theme
+            )
+        } catch {
+            print("[WidgetProvider] Live fetch error for \(safeKey): \(error.localizedDescription)")
         }
 
-        // Try reading from multi-account map
-        if let accountsDict = json["accounts"] as? [String: [String: Any]],
-           let slotDict = accountsDict[slot],
-           let slotData = try? JSONSerialization.data(withJSONObject: slotDict),
-           let acc = try? JSONDecoder().decode(SocialAccountStats.self, from: slotData) {
-            return acc
+        // 2. If live fetch succeeded, cache it locally
+        if let live = stats {
+            saveCachedStats(live, key: safeKey)
+            await cacheImages(stats: live, key: safeKey)
+        } else {
+            // Fallback to locally cached stats
+            stats = loadCachedStats(key: safeKey)
         }
 
-        // Backward compatibility for slot youtube1
-        if slot == "youtube1", let statsDict = json["stats"] as? [String: Any] {
-            let theme = json["theme"] as? String ?? "red"
-            var acc = SocialAccountStats.defaultSample(for: "youtube1", platform: .youtube)
-            acc.title = statsDict["channelTitle"] as? String ?? "YouTube Kanalı"
-            acc.handle = statsDict["handle"] as? String ?? "@kanal"
-            acc.mainStatCount = statsDict["subscriberCount"] as? String ?? "--"
-            acc.avatarURL = statsDict["avatarURL"] as? String
-            acc.secondaryTitle = statsDict["latestShortTitle"] as? String ?? ""
-            acc.secondaryValue = statsDict["latestShortViews"] as? String ?? "--"
-            acc.thumbnailURL = statsDict["latestShortThumbnail"] as? String
-            acc.contentURL = statsDict["latestShortURL"] as? String
-            acc.theme = theme
-            acc.isConfigured = true
-            return acc
-        }
+        let finalStats = stats ?? SocialAccountStats.defaultSample(for: safeKey, platform: platform)
+        let avatar = loadLocalImage(named: "avatar_\(safeKey).png")
+        let thumb = loadLocalImage(named: "thumb_\(safeKey).png")
 
+        return SocialTimelineEntry(
+            date: Date(),
+            stats: finalStats,
+            avatarImage: avatar,
+            thumbnailImage: thumb
+        )
+    }
+
+    // MARK: - Cache Helpers
+    private func containerURL() -> URL {
+        let userHome = FileManager.default.homeDirectoryForCurrentUser
+        let dir = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/Library/Application Support/YouTubeWidget", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    private func saveCachedStats(_ stats: SocialAccountStats, key: String) {
+        let file = containerURL().appendingPathComponent("cache_\(key).json")
+        if let data = try? JSONEncoder().encode(stats) {
+            try? data.write(to: file, options: .atomic)
+        }
+    }
+
+    private func loadCachedStats(key: String) -> SocialAccountStats? {
+        let file = containerURL().appendingPathComponent("cache_\(key).json")
+        if let data = try? Data(contentsOf: file),
+           let stats = try? JSONDecoder().decode(SocialAccountStats.self, from: data) {
+            return stats
+        }
         return nil
     }
 
-    private func loadRefreshInterval() -> Int {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let fileURL = appSupport.appendingPathComponent("YouTubeWidget/shared_data.json")
-        if let data = try? Data(contentsOf: fileURL),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let interval = json["refreshIntervalMinutes"] as? Int, interval > 0 {
-            return interval
+    private func cacheImages(stats: SocialAccountStats, key: String) async {
+        let dir = containerURL()
+
+        // Avatar
+        if let avStr = stats.avatarURL, let url = URL(string: avStr),
+           let (data, _) = try? await URLSession.shared.data(from: url) {
+            let file = dir.appendingPathComponent("avatar_\(key).png")
+            try? data.write(to: file, options: .atomic)
         }
-        return 360 // Default 6 hours
+
+        // Thumbnail
+        if let thStr = stats.thumbnailURL, let url = URL(string: thStr),
+           let (data, _) = try? await URLSession.shared.data(from: url) {
+            let file = dir.appendingPathComponent("thumb_\(key).png")
+            try? data.write(to: file, options: .atomic)
+        }
     }
 
-    private func loadLocalImage(named: String, fallbackName: String?) -> NSImage? {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let primaryURL = appSupport.appendingPathComponent("YouTubeWidget/\(named)")
-        if let data = try? Data(contentsOf: primaryURL), let img = NSImage(data: data) {
+    private func loadLocalImage(named: String) -> NSImage? {
+        let file = containerURL().appendingPathComponent(named)
+        if let data = try? Data(contentsOf: file), let img = NSImage(data: data) {
             return img
-        }
-        if let fb = fallbackName {
-            let fallbackURL = appSupport.appendingPathComponent("YouTubeWidget/\(fb)")
-            if let data = try? Data(contentsOf: fallbackURL), let img = NSImage(data: data) {
-                return img
-            }
         }
         return nil
     }
@@ -186,8 +297,8 @@ struct SocialWidgetEntryView: View {
 
                 Spacer(minLength: 0)
 
-                // ⚙️ Settings Gear Button (Directly opens Settings for this slot)
-                Link(destination: URL(string: "youtubewidget://settings?slot=\(entry.stats.slotID)")!) {
+                // ⚙️ Settings Gear Button (Opens helper app)
+                Link(destination: URL(string: "youtubewidget://settings")!) {
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(.white.opacity(0.85))
@@ -198,7 +309,7 @@ struct SocialWidgetEntryView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .help("Widget Ayarları & Kanal Değiştir")
+                .help("Widget Ayarları & Test")
             }
 
             Spacer(minLength: 0)
@@ -308,7 +419,7 @@ struct SocialWidgetEntryView: View {
                     Spacer(minLength: 0)
 
                     // ⚙️ Settings Gear Button
-                    Link(destination: URL(string: "youtubewidget://settings?slot=\(entry.stats.slotID)")!) {
+                    Link(destination: URL(string: "youtubewidget://settings")!) {
                         Image(systemName: "gearshape.fill")
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundColor(.white.opacity(0.85))
@@ -319,7 +430,7 @@ struct SocialWidgetEntryView: View {
                             )
                     }
                     .buttonStyle(.plain)
-                    .help("Widget Ayarları & Kanal Değiştir")
+                    .help("Widget Ayarları & Test")
                 }
 
                 Spacer(minLength: 0)
@@ -533,15 +644,6 @@ struct SocialWidgetEntryView: View {
                     endPoint: .bottomTrailing
                 )
             }
-        case "purple":
-            ZStack {
-                Color.black.opacity(0.45)
-                LinearGradient(
-                    colors: [Color(red: 0.88, green: 0.19, blue: 0.42).opacity(0.35), Color(red: 0.4, green: 0.1, blue: 0.7).opacity(0.35)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            }
         default:
             // "red"
             ZStack {
@@ -579,70 +681,23 @@ extension Color {
     }
 }
 
-// MARK: - Widget Configurations
-struct YouTubePrimaryWidget: Widget {
+// MARK: - Single Unified Widget Entry Point
+@available(macOS 14.0, *)
+@main
+struct YouTubeSocialWidget: Widget {
     let kind: String = "com.ufukcelen.youtubewidget.extension"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: SocialTimelineProvider(slotID: "youtube1", defaultPlatform: .youtube)) { entry in
+        AppIntentConfiguration(
+            kind: kind,
+            intent: SelectAccountIntent.self,
+            provider: SocialAppIntentTimelineProvider()
+        ) { entry in
             SocialWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("YouTube (Ana Kanal)")
-        .description("YouTube abone sayınızı ve son Shorts videonuzu masaüstünüzde takip edin.")
+        .configurationDisplayName("YouTube & Sosyal Takip")
+        .description("Masaüstünüzde YouTube, Instagram veya TikTok hesaplarınızı canlı takip edin.")
         .supportedFamilies([.systemSmall, .systemMedium])
         .contentMarginsDisabled()
-    }
-}
-
-struct YouTubeSecondaryWidget: Widget {
-    let kind: String = "com.ufukcelen.youtubewidget.extension.youtube2"
-
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: SocialTimelineProvider(slotID: "youtube2", defaultPlatform: .youtube)) { entry in
-            SocialWidgetEntryView(entry: entry)
-        }
-        .configurationDisplayName("YouTube (2. Kanal)")
-        .description("İkinci YouTube kanalınızın abone sayısını ve videosunu masaüstünüzde takip edin.")
-        .supportedFamilies([.systemSmall, .systemMedium])
-        .contentMarginsDisabled()
-    }
-}
-
-struct InstagramWidget: Widget {
-    let kind: String = "com.ufukcelen.youtubewidget.extension.instagram"
-
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: SocialTimelineProvider(slotID: "instagram", defaultPlatform: .instagram)) { entry in
-            SocialWidgetEntryView(entry: entry)
-        }
-        .configurationDisplayName("Instagram Widget")
-        .description("Instagram takipçi ve gönderi sayınızı masaüstünüzde takip edin.")
-        .supportedFamilies([.systemSmall, .systemMedium])
-        .contentMarginsDisabled()
-    }
-}
-
-struct TikTokWidget: Widget {
-    let kind: String = "com.ufukcelen.youtubewidget.extension.tiktok"
-
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: SocialTimelineProvider(slotID: "tiktok", defaultPlatform: .tiktok)) { entry in
-            SocialWidgetEntryView(entry: entry)
-        }
-        .configurationDisplayName("TikTok Widget")
-        .description("TikTok takipçi ve beğeni sayınızı masaüstünüzde takip edin.")
-        .supportedFamilies([.systemSmall, .systemMedium])
-        .contentMarginsDisabled()
-    }
-}
-
-// MARK: - Multi-Widget Bundle
-@main
-struct SocialWidgetBundle: WidgetBundle {
-    var body: some Widget {
-        YouTubePrimaryWidget()
-        YouTubeSecondaryWidget()
-        InstagramWidget()
-        TikTokWidget()
     }
 }
