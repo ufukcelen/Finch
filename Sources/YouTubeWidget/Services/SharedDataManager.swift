@@ -21,22 +21,50 @@ public struct MultiSocialWidgetConfig: Codable, Sendable {
 public final class SharedDataManager: @unchecked Sendable {
     public static let shared = SharedDataManager()
 
-    private let mainFileURL: URL
-    private let extContainerDir: URL
+    private let primaryDir: URL
+    private let targetDirs: [URL]
 
     public init() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = appSupport.appendingPathComponent("YouTubeWidget", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        self.mainFileURL = dir.appendingPathComponent("shared_data.json")
+        var dirs: [URL] = []
 
+        // 1. App Group container (if configured and valid)
+        if let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.ufukcelen.youtubewidget") {
+            let groupDir = groupURL.appendingPathComponent("Library/Application Support/YouTubeWidget", isDirectory: true)
+            try? FileManager.default.createDirectory(at: groupDir, withIntermediateDirectories: true)
+            dirs.append(groupDir)
+        }
+
+        // 2. Standard user Application Support
+        if let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            let standardDir = appSupport.appendingPathComponent("YouTubeWidget", isDirectory: true)
+            try? FileManager.default.createDirectory(at: standardDir, withIntermediateDirectories: true)
+            dirs.append(standardDir)
+        }
+
+        // 3. Extension Container direct path
         let userHome = FileManager.default.homeDirectoryForCurrentUser
-        let extDir = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/Library/Application Support/YouTubeWidget", isDirectory: true)
-        try? FileManager.default.createDirectory(at: extDir, withIntermediateDirectories: true)
-        self.extContainerDir = extDir
+        let extDirectDir = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/Library/Application Support/YouTubeWidget", isDirectory: true)
+        try? FileManager.default.createDirectory(at: extDirectDir, withIntermediateDirectories: true)
+        if !dirs.contains(where: { $0.path == extDirectDir.path }) {
+            dirs.append(extDirectDir)
+        }
+
+        // 4. Main App Container direct path
+        let appDirectDir = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget/Data/Library/Application Support/YouTubeWidget", isDirectory: true)
+        try? FileManager.default.createDirectory(at: appDirectDir, withIntermediateDirectories: true)
+        if !dirs.contains(where: { $0.path == appDirectDir.path }) {
+            dirs.append(appDirectDir)
+        }
+
+        self.targetDirs = dirs
+        self.primaryDir = dirs.first ?? FileManager.default.temporaryDirectory
+
+        DebugLogger.shared.log(.info, tag: "SharedDataManager", message: "Hedef depolama dizinleri (\(dirs.count) adet): \(dirs.map { $0.path }.joined(separator: ", "))")
     }
 
     public func saveAll(accounts: [String: SocialAccountStats], refreshIntervalMinutes: Int) {
+        DebugLogger.shared.log(.info, tag: "SharedDataManager", message: "Veriler diske kaydediliyor... (\(accounts.count) hesap, \(refreshIntervalMinutes) dk)")
+
         var configDict: [String: Any] = [:]
         configDict["refreshIntervalMinutes"] = refreshIntervalMinutes
         configDict["lastSaved"] = Date().timeIntervalSince1970
@@ -50,7 +78,7 @@ public final class SharedDataManager: @unchecked Sendable {
         }
         configDict["accounts"] = accountsDict
 
-        // Also add root-level legacy keys for the primary youtube1 account for backward compatibility
+        // Root-level legacy keys for backward compatibility
         if let primary = accounts["youtube1"] ?? accounts.values.first {
             configDict["channelInput"] = primary.handle
             configDict["theme"] = primary.theme
@@ -63,21 +91,24 @@ public final class SharedDataManager: @unchecked Sendable {
         do {
             let data = try JSONSerialization.data(withJSONObject: configDict, options: [.prettyPrinted])
 
-            // 1. Write to Main App Application Support
-            try data.write(to: mainFileURL, options: .atomic)
+            for dir in targetDirs {
+                try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                let fileURL = dir.appendingPathComponent("shared_data.json")
+                do {
+                    try data.write(to: fileURL, options: .atomic)
+                    DebugLogger.shared.log(.debug, tag: "SharedDataManager", message: "Yazıldı: \(fileURL.path)")
+                } catch {
+                    DebugLogger.shared.log(.warning, tag: "SharedDataManager", message: "Yazılamadı: \(fileURL.path) - \(error.localizedDescription)")
+                }
+            }
 
-            // 2. Write directly to Widget Extension Container
-            try? FileManager.default.createDirectory(at: extContainerDir, withIntermediateDirectories: true)
-            let extFileURL = extContainerDir.appendingPathComponent("shared_data.json")
-            try data.write(to: extFileURL, options: .atomic)
-
-            // 3. Cache images for all slots
+            // Cache images asynchronously
             cacheAllImages(accounts: Array(accounts.values))
         } catch {
-            print("[SharedDataManager] Error saving multi-widget shared data: \(error)")
+            DebugLogger.shared.log(.error, tag: "SharedDataManager", message: "JSON serileştirme hatası: \(error)")
         }
 
-        // Invalidate chronod cache so it immediately repaints the native desktop widget
+        // Invalidate chronod cache if present
         let userHome = FileManager.default.homeDirectoryForCurrentUser
         let chronoPlaceholders = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/SystemData/com.apple.chrono/placeholders", isDirectory: true)
         try? FileManager.default.removeItem(at: chronoPlaceholders)
@@ -86,6 +117,7 @@ public final class SharedDataManager: @unchecked Sendable {
 
         // Notify WidgetKit
         WidgetCenter.shared.reloadAllTimelines()
+        DebugLogger.shared.log(.info, tag: "SharedDataManager", message: "WidgetKit.reloadAllTimelines tetiklendi.")
     }
 
     public func save(stats: YouTubeStats, channelInput: String, apiKey: String?, theme: String) {
@@ -120,57 +152,75 @@ public final class SharedDataManager: @unchecked Sendable {
                 // Avatar
                 if let avatarStr = acc.avatarURL, let url = URL(string: avatarStr),
                    let (data, _) = try? await URLSession.shared.data(from: url) {
-                    let extAvatar = self.extContainerDir.appendingPathComponent("avatar_\(slot).png")
-                    try? data.write(to: extAvatar)
-                    let mainAvatar = self.mainFileURL.deletingLastPathComponent().appendingPathComponent("avatar_\(slot).png")
-                    try? data.write(to: mainAvatar)
-                    if slot == "youtube1" {
-                        try? data.write(to: self.extContainerDir.appendingPathComponent("avatar.png"))
+                    for dir in self.targetDirs {
+                        let avFile = dir.appendingPathComponent("avatar_\(slot).png")
+                        try? data.write(to: avFile)
+                        if slot == "youtube1" {
+                            let legacyAv = dir.appendingPathComponent("avatar.png")
+                            try? data.write(to: legacyAv)
+                        }
                     }
                 }
 
                 // Thumbnail / Video Cover
                 if let thumbStr = acc.thumbnailURL, let url = URL(string: thumbStr),
                    let (data, _) = try? await URLSession.shared.data(from: url) {
-                    let extThumb = self.extContainerDir.appendingPathComponent("thumbnail_\(slot).png")
-                    try? data.write(to: extThumb)
-                    let mainThumb = self.mainFileURL.deletingLastPathComponent().appendingPathComponent("thumbnail_\(slot).png")
-                    try? data.write(to: mainThumb)
-                    if slot == "youtube1" {
-                        try? data.write(to: self.extContainerDir.appendingPathComponent("thumbnail.png"))
+                    for dir in self.targetDirs {
+                        let thFile = dir.appendingPathComponent("thumbnail_\(slot).png")
+                        try? data.write(to: thFile)
+                        if slot == "youtube1" {
+                            let legacyTh = dir.appendingPathComponent("thumbnail.png")
+                            try? data.write(to: legacyTh)
+                        }
                     }
                 }
             }
 
             WidgetCenter.shared.reloadAllTimelines()
+            DebugLogger.shared.log(.debug, tag: "SharedDataManager", message: "Görseller önbelleklendi ve widget yenilendi.")
         }
     }
 
     public func loadAccounts() -> [String: SocialAccountStats]? {
-        let fileToRead = FileManager.default.fileExists(atPath: mainFileURL.path) ? mainFileURL : extContainerDir.appendingPathComponent("shared_data.json")
-        guard let data = try? Data(contentsOf: fileToRead),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let accountsDict = json["accounts"] as? [String: [String: Any]] else {
-            return nil
-        }
+        for dir in targetDirs {
+            let file = dir.appendingPathComponent("shared_data.json")
+            if let data = try? Data(contentsOf: file),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let accountsDict = json["accounts"] as? [String: [String: Any]] {
 
-        var result: [String: SocialAccountStats] = [:]
-        for (key, dict) in accountsDict {
-            if let accData = try? JSONSerialization.data(withJSONObject: dict),
-               let acc = try? JSONDecoder().decode(SocialAccountStats.self, from: accData) {
-                result[key] = acc
+                var result: [String: SocialAccountStats] = [:]
+                for (key, dict) in accountsDict {
+                    if let accData = try? JSONSerialization.data(withJSONObject: dict),
+                       let acc = try? JSONDecoder().decode(SocialAccountStats.self, from: accData) {
+                        result[key] = acc
+                    }
+                }
+                if !result.isEmpty {
+                    return result
+                }
             }
         }
-        return result
+        return nil
     }
 
     public func loadRefreshInterval() -> Int {
-        let fileToRead = FileManager.default.fileExists(atPath: mainFileURL.path) ? mainFileURL : extContainerDir.appendingPathComponent("shared_data.json")
-        if let data = try? Data(contentsOf: fileToRead),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let interval = json["refreshIntervalMinutes"] as? Int, interval > 0 {
-            return interval
+        for dir in targetDirs {
+            let file = dir.appendingPathComponent("shared_data.json")
+            if let data = try? Data(contentsOf: file),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let interval = json["refreshIntervalMinutes"] as? Int, interval > 0 {
+                return interval
+            }
         }
         return 360 // Default 6 hours
+    }
+
+    public func getStorageDiagnostics() -> [(path: String, exists: Bool, sizeBytes: Int)] {
+        return targetDirs.map { dir in
+            let file = dir.appendingPathComponent("shared_data.json")
+            let exists = FileManager.default.fileExists(atPath: file.path)
+            let size = (try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            return (path: file.path, exists: exists, sizeBytes: size)
+        }
     }
 }

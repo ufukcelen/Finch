@@ -5,7 +5,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>tr</string>
     <key>CFBundleDisplayName</key>
-    <string>YouTube &amp; Sosyal Takip</string>
+    <string>Sosyal Medya Widget</string>
     <key>CFBundleExecutable</key>
     <string>YouTubeWidgetExtension</string>
     <key>CFBundleIdentifier</key>
@@ -17,13 +17,13 @@
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.0.3</string>
+    <string>0.0.6</string>
     <key>CFBundleSupportedPlatforms</key>
     <array>
         <string>MacOSX</string>
     </array>
     <key>CFBundleVersion</key>
-    <string>3</string>
+    <string>6</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>NSExtension</key>

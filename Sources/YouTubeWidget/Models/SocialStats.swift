@@ -95,7 +95,10 @@ public struct SocialAccountStats: Codable, Sendable, Equatable {
     }
 
     public var validProfileURL: URL {
-        if let url = URL(string: profileURL), !profileURL.isEmpty {
+        if let url = URL(string: profileURL),
+           !profileURL.isEmpty,
+           let scheme = url.scheme?.lowercased(),
+           scheme == "http" || scheme == "https" {
             return url
         }
         switch platform {
@@ -106,10 +109,26 @@ public struct SocialAccountStats: Codable, Sendable, Equatable {
     }
 
     public var validContentURL: URL {
-        if let c = contentURL, let url = URL(string: c), !c.isEmpty {
+        if let c = contentURL,
+           let url = URL(string: c),
+           !c.isEmpty,
+           let scheme = url.scheme?.lowercased(),
+           scheme == "http" || scheme == "https" {
             return url
         }
         return validProfileURL
+    }
+
+    
+    public var displayStatNumber: String {
+        var clean = mainStatCount
+        let suffixes = [" abone", " aboneleri", " subscribers", " subs", " followers", " takipçi"]
+        for s in suffixes {
+            if let r = clean.range(of: s, options: .caseInsensitive) {
+                clean.removeSubrange(r)
+            }
+        }
+        return clean.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     public static func defaultSample(for slotID: String, platform: SocialPlatform) -> SocialAccountStats {

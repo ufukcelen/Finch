@@ -16,8 +16,11 @@ public final class SocialService: Sendable {
     ) async throws -> SocialAccountStats {
         let clean = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else {
+            DebugLogger.shared.log(.error, tag: "SocialService", message: "[\(slotID)] Kullanıcı adı veya kanal boş olamaz.")
             throw NSError(domain: "SocialService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Kullanıcı adı veya kanal boş olamaz."])
         }
+
+        DebugLogger.shared.log(.info, tag: "SocialService", message: "[\(slotID)] \(platform.displayName) için '\(clean)' aranıyor...")
 
         switch platform {
         case .youtube:
@@ -39,7 +42,7 @@ public final class SocialService: Sendable {
             profileURL = input
         }
 
-        return SocialAccountStats(
+        let stats = SocialAccountStats(
             slotID: slotID,
             platform: .youtube,
             title: yt.channelTitle,
@@ -55,12 +58,15 @@ public final class SocialService: Sendable {
             lastUpdated: Date(),
             isConfigured: true
         )
+        DebugLogger.shared.log(.info, tag: "SocialService", message: "[\(slotID)] YouTube başarıyla güncellendi: \(stats.title) (\(stats.mainStatCount))")
+        return stats
     }
 
     // MARK: - Instagram
     private func fetchInstagram(slotID: String, input: String, theme: String) async throws -> SocialAccountStats {
         let cleanUser = input.trimmingCharacters(in: CharacterSet(charactersIn: "@ /")).components(separatedBy: "/").last ?? input
         guard let url = URL(string: "https://www.instagram.com/\(cleanUser)/") else {
+            DebugLogger.shared.log(.error, tag: "SocialService", message: "[\(slotID)] Geçersiz Instagram URL: \(cleanUser)")
             throw NSError(domain: "SocialService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Geçersiz Instagram kullanıcı adı."])
         }
 
@@ -68,10 +74,16 @@ public final class SocialService: Sendable {
         request.setValue(socialUserAgent, forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 12
 
+        DebugLogger.shared.log(.debug, tag: "SocialService", message: "[\(slotID)] Instagram profil isteği atılıyor: \(url.absoluteString)")
+
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200,
-              let html = String(data: data, encoding: .utf8) else {
-            throw NSError(domain: "SocialService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Instagram profili bulunamadı veya gizli."])
+        guard let http = response as? HTTPURLResponse else {
+            throw NSError(domain: "SocialService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Sunucudan yanıt alınamadı."])
+        }
+
+        guard http.statusCode == 200, let html = String(data: data, encoding: .utf8) else {
+            DebugLogger.shared.log(.error, tag: "SocialService", message: "[\(slotID)] Instagram HTTP \(http.statusCode) döndü.")
+            throw NSError(domain: "SocialService", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "Instagram profili bulunamadı veya gizli (HTTP \(http.statusCode))."])
         }
 
         var followers = "--"
@@ -82,6 +94,7 @@ public final class SocialService: Sendable {
 
         if let desc = extractMetaContent(html: html, property: "og:description") {
             let decoded = decodeHTMLEntities(desc)
+            DebugLogger.shared.log(.debug, tag: "SocialService", message: "[\(slotID)] Instagram og:description: \(decoded)")
             if let f = matchRegexGroup(text: decoded, pattern: "([0-9.,]+[KkMmBb]?)\\s*(?:followers|takipçi|takip)") {
                 followers = f
             }
@@ -106,10 +119,11 @@ public final class SocialService: Sendable {
         }
 
         guard followers != "--" else {
+            DebugLogger.shared.log(.error, tag: "SocialService", message: "[\(slotID)] Instagram takipçi sayısı ayrıştırılamadı.")
             throw NSError(domain: "SocialService", code: 422, userInfo: [NSLocalizedDescriptionKey: "Instagram takipçi bilgisi alınamadı. Kullanıcı adı doğru mu?"])
         }
 
-        return SocialAccountStats(
+        let stats = SocialAccountStats(
             slotID: slotID,
             platform: .instagram,
             title: title.isEmpty ? cleanUser : title,
@@ -125,12 +139,15 @@ public final class SocialService: Sendable {
             lastUpdated: Date(),
             isConfigured: true
         )
+        DebugLogger.shared.log(.info, tag: "SocialService", message: "[\(slotID)] Instagram başarıyla güncellendi: \(stats.title) (\(stats.mainStatCount))")
+        return stats
     }
 
     // MARK: - TikTok
     private func fetchTikTok(slotID: String, input: String, theme: String) async throws -> SocialAccountStats {
         let cleanUser = input.trimmingCharacters(in: CharacterSet(charactersIn: "@ /")).components(separatedBy: "/").last ?? input
         guard let url = URL(string: "https://www.tiktok.com/@\(cleanUser)") else {
+            DebugLogger.shared.log(.error, tag: "SocialService", message: "[\(slotID)] Geçersiz TikTok URL: \(cleanUser)")
             throw NSError(domain: "SocialService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Geçersiz TikTok kullanıcı adı."])
         }
 
@@ -138,10 +155,16 @@ public final class SocialService: Sendable {
         request.setValue(socialUserAgent, forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 12
 
+        DebugLogger.shared.log(.debug, tag: "SocialService", message: "[\(slotID)] TikTok profil isteği atılıyor: \(url.absoluteString)")
+
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200,
-              let html = String(data: data, encoding: .utf8) else {
-            throw NSError(domain: "SocialService", code: 404, userInfo: [NSLocalizedDescriptionKey: "TikTok profili bulunamadı veya gizli."])
+        guard let http = response as? HTTPURLResponse else {
+            throw NSError(domain: "SocialService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Sunucudan yanıt alınamadı."])
+        }
+
+        guard http.statusCode == 200, let html = String(data: data, encoding: .utf8) else {
+            DebugLogger.shared.log(.error, tag: "SocialService", message: "[\(slotID)] TikTok HTTP \(http.statusCode) döndü.")
+            throw NSError(domain: "SocialService", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "TikTok profili bulunamadı veya gizli (HTTP \(http.statusCode))."])
         }
 
         var followers = "--"
@@ -152,6 +175,7 @@ public final class SocialService: Sendable {
 
         if let desc = extractMetaContent(html: html, property: "og:description") {
             let decoded = decodeHTMLEntities(desc)
+            DebugLogger.shared.log(.debug, tag: "SocialService", message: "[\(slotID)] TikTok og:description: \(decoded)")
             if let f = matchRegexGroup(text: decoded, pattern: "([0-9.,]+[KkMmBb]?)\\s*(?:followers|takipçi)") {
                 followers = f
             }
@@ -176,10 +200,11 @@ public final class SocialService: Sendable {
         }
 
         guard followers != "--" else {
+            DebugLogger.shared.log(.error, tag: "SocialService", message: "[\(slotID)] TikTok takipçi sayısı ayrıştırılamadı.")
             throw NSError(domain: "SocialService", code: 422, userInfo: [NSLocalizedDescriptionKey: "TikTok takipçi bilgisi alınamadı. Kullanıcı adı doğru mu?"])
         }
 
-        return SocialAccountStats(
+        let stats = SocialAccountStats(
             slotID: slotID,
             platform: .tiktok,
             title: title.isEmpty ? cleanUser : title,
@@ -195,10 +220,12 @@ public final class SocialService: Sendable {
             lastUpdated: Date(),
             isConfigured: true
         )
+        DebugLogger.shared.log(.info, tag: "SocialService", message: "[\(slotID)] TikTok başarıyla güncellendi: \(stats.title) (\(stats.mainStatCount))")
+        return stats
     }
 
     // MARK: - HTML Extraction Helpers
-    private func extractMetaContent(html: String, property: String) -> String? {
+    public func extractMetaContent(html: String, property: String) -> String? {
         let pattern1 = "<meta\\s+property=[\"']\(property)[\"']\\s+content=[\"']([^\"']+)[\"']"
         if let val = matchRegexGroup(text: html, pattern: pattern1) {
             return val
@@ -207,7 +234,7 @@ public final class SocialService: Sendable {
         return matchRegexGroup(text: html, pattern: pattern2)
     }
 
-    private func matchRegexGroup(text: String, pattern: String) -> String? {
+    public func matchRegexGroup(text: String, pattern: String) -> String? {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return nil }
         let nsString = text as NSString
         if let match = regex.firstMatch(in: text, options: [], range: NSRange(location: 0, length: nsString.length)),
@@ -217,7 +244,7 @@ public final class SocialService: Sendable {
         return nil
     }
 
-    private func decodeHTMLEntities(_ string: String) -> String {
+    public func decodeHTMLEntities(_ string: String) -> String {
         var s = string
         s = s.replacingOccurrences(of: "&#xe7;", with: "ç")
         s = s.replacingOccurrences(of: "&#xc7;", with: "Ç")
@@ -235,6 +262,9 @@ public final class SocialService: Sendable {
         s = s.replacingOccurrences(of: "&#x27;", with: "'")
         s = s.replacingOccurrences(of: "&amp;", with: "&")
         s = s.replacingOccurrences(of: "&quot;", with: "\"")
+        s = s.replacingOccurrences(of: "&apos;", with: "'")
+        s = s.replacingOccurrences(of: "&lt;", with: "<")
+        s = s.replacingOccurrences(of: "&gt;", with: ">")
         return s
     }
 }

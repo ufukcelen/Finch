@@ -7,7 +7,7 @@ cd "$DIR"
 export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
 
 echo "=========================================="
-echo "  🎬 YouTube macOS Widget v0.0.3 Derleniyor...  "
+echo "  🎬 YouTube macOS Widget v0.0.6 Derleniyor...  "
 echo "  🛠️  Xcode: $(xcodebuild -version | head -n 1)"
 echo "=========================================="
 
@@ -63,13 +63,13 @@ cat << 'EOF' > "$CONTENTS_DIR/Info.plist"
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.0.3</string>
+    <string>0.0.6</string>
     <key>CFBundleSupportedPlatforms</key>
     <array>
         <string>MacOSX</string>
     </array>
     <key>CFBundleVersion</key>
-    <string>3</string>
+    <string>6</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
@@ -104,8 +104,8 @@ python3 "$DIR/scripts/generate_project.py"
 xcodebuild -project "$DIR/YouTubeWidget.xcodeproj" \
     -target YouTubeWidgetExtension \
     -configuration Release \
-    CODE_SIGN_IDENTITY="" \
-    CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGN_IDENTITY="-" \
+    CODE_SIGNING_REQUIRED=YES \
     CODE_SIGNING_ALLOWED=YES \
     -quiet
 
@@ -145,10 +145,10 @@ killall -9 chronod 2>/dev/null || true
 killall NotificationCenter 2>/dev/null || true
 
 echo "=========================================="
-echo "✅ Tamamlandı! YouTubeWidget v0.0.3 başarıyla kuruldu:"
+echo "✅ Tamamlandı! YouTubeWidget v0.0.6 başarıyla kuruldu:"
 echo "   📍 /Applications/YouTubeWidget.app"
-echo "   🧩 WidgetKit Uzantısı: Aktif (Tekil Widget: YouTube & Sosyal Takip - Küçük & Orta)"
-echo "   ✨ AppIntents Metadata: Aktif (Sağ tıkla düzenleme & Bağımsız kanal/sıklık ayarı)"
+echo "   🧩 WidgetKit Uzantısı: Aktif (3 Platform: YouTube, Instagram, TikTok - Küçük & Orta)"
+echo "   ✨ Bağımsız Düzenleme: AppIntentConfiguration (Sağ tıkla kanal, tema & sıklık ayarı)"
 echo "=========================================="
 
 if [[ "$*" == *"--run"* ]]; then

@@ -3,46 +3,29 @@ import SwiftUI
 import AppKit
 import AppIntents
 
-// MARK: - App Intents (Per-Widget Configuration on macOS Desktop)
-
-@available(macOS 14.0, *)
-public enum WidgetSlotChoice: String, AppEnum, Sendable {
-    case slot1 = "slot1"
-    case slot2 = "slot2"
-    case slot3 = "slot3"
-    case slot4 = "slot4"
-    case custom = "custom"
-
-    public static var typeDisplayRepresentation: TypeDisplayRepresentation = "Hesap / Slot"
-    public static var caseDisplayRepresentations: [WidgetSlotChoice: DisplayRepresentation] = [
-        .slot1: "1. Slot (Ana YouTube Kanalı)",
-        .slot2: "2. Slot (2. YouTube Kanalı)",
-        .slot3: "3. Slot (Instagram)",
-        .slot4: "4. Slot (TikTok)",
-        .custom: "✍️ Özel Kanal Yaz"
-    ]
+// MARK: - Timeline Entry
+struct SocialTimelineEntry: TimelineEntry {
+    let date: Date
+    let stats: SocialAccountStats
+    let avatarImage: NSImage?
+    let thumbnailImage: NSImage?
 }
 
+// MARK: - AppIntents Shared Enums
 @available(macOS 14.0, *)
-public enum WidgetPlatform: String, AppEnum, Sendable {
-    case youtube = "YouTube"
-    case instagram = "Instagram"
-    case tiktok = "TikTok"
+public enum WidgetTheme: String, AppEnum, Sendable {
+    case red = "red"
+    case dark = "dark"
+    case glass = "glass"
+    case neon = "neon"
 
-    public static var typeDisplayRepresentation: TypeDisplayRepresentation = "Platform"
-    public static var caseDisplayRepresentations: [WidgetPlatform: DisplayRepresentation] = [
-        .youtube: "🔴 YouTube",
-        .instagram: "📸 Instagram",
-        .tiktok: "🎵 TikTok"
+    public static var typeDisplayRepresentation: TypeDisplayRepresentation = "Görünüm Teması"
+    public static var caseDisplayRepresentations: [WidgetTheme: DisplayRepresentation] = [
+        .red: "🔴 Canlı Kırmızı",
+        .dark: "⬛️ Koyu Titanyum",
+        .glass: "🪟 Buzlu Cam",
+        .neon: "🟣 Siber Mor"
     ]
-
-    public func toSocialPlatform() -> SocialPlatform {
-        switch self {
-        case .youtube: return .youtube
-        case .instagram: return .instagram
-        case .tiktok: return .tiktok
-        }
-    }
 }
 
 @available(macOS 14.0, *)
@@ -61,280 +44,295 @@ public enum WidgetRefreshInterval: Int, AppEnum, Sendable {
     ]
 }
 
+// MARK: - 1. YouTube Intent (Per-Widget Configuration on macOS Desktop)
 @available(macOS 14.0, *)
-public enum WidgetTheme: String, AppEnum, Sendable {
-    case red = "red"
-    case dark = "dark"
-    case glass = "glass"
-    case neon = "neon"
+public struct YouTubeConfigurationIntent: WidgetConfigurationIntent {
+    public static var title: LocalizedStringResource = "YouTube Ayarları"
+    public static var description = IntentDescription("Masaüstündeki bu widget için YouTube kanalını, temasını ve güncelleme sıklığını belirleyin.")
 
-    public static var typeDisplayRepresentation: TypeDisplayRepresentation = "Görünüm Teması"
-    public static var caseDisplayRepresentations: [WidgetTheme: DisplayRepresentation] = [
-        .red: "🔴 Canlı Kırmızı",
-        .dark: "⬛️ Koyu Titanyum",
-        .glass: "🪟 Buzlu Cam",
-        .neon: "🟣 Siber Mor Neon"
-    ]
-}
-
-@available(macOS 14.0, *)
-public struct SelectAccountIntent: WidgetConfigurationIntent {
-    public static var title: LocalizedStringResource = "Sosyal Widget Ayarları"
-    public static var description = IntentDescription("Bu widget'ın göstereceği hesabı, temasını ve güncelleme sıklığını belirleyin.")
-
-    @Parameter(title: "Hesap Seçimi", default: .slot1)
-    public var slot: WidgetSlotChoice
-
-    @Parameter(title: "Özel Kanal / Kullanıcı Adı", default: "")
-    public var customHandle: String
-
-    @Parameter(title: "Özel Platform", default: .youtube)
-    public var customPlatform: WidgetPlatform
-
-    @Parameter(title: "Yenileme Sıklığı", default: .sixHours)
-    public var refreshInterval: WidgetRefreshInterval
+    @Parameter(title: "Kanal Adı (@kanal)", default: "@RadioMocas")
+    public var channel: String
 
     @Parameter(title: "Görünüm Teması", default: .red)
     public var theme: WidgetTheme
 
+    @Parameter(title: "Yenileme Sıklığı", default: .sixHours)
+    public var refreshInterval: WidgetRefreshInterval
+
     public init() {}
 
-    public init(
-        slot: WidgetSlotChoice = .slot1,
-        customHandle: String = "",
-        customPlatform: WidgetPlatform = .youtube,
-        refreshInterval: WidgetRefreshInterval = .sixHours,
-        theme: WidgetTheme = .red
-    ) {
-        self.slot = slot
-        self.customHandle = customHandle
-        self.customPlatform = customPlatform
-        self.refreshInterval = refreshInterval
+    public init(channel: String = "@RadioMocas", theme: WidgetTheme = .red, refreshInterval: WidgetRefreshInterval = .sixHours) {
+        self.channel = channel
         self.theme = theme
+        self.refreshInterval = refreshInterval
     }
 }
 
-// MARK: - Timeline Entry
-struct SocialTimelineEntry: TimelineEntry {
-    let date: Date
-    let stats: SocialAccountStats
-    let avatarImage: NSImage?
-    let thumbnailImage: NSImage?
-}
-
-// MARK: - Timeline Provider
+// MARK: - 2. Instagram Intent (Per-Widget Configuration on macOS Desktop)
 @available(macOS 14.0, *)
-struct SocialAppIntentTimelineProvider: AppIntentTimelineProvider {
-    func placeholder(in context: Context) -> SocialTimelineEntry {
-        let sample = SocialAccountStats.defaultSample(for: "placeholder", platform: .youtube)
-        return SocialTimelineEntry(date: Date(), stats: sample, avatarImage: nil, thumbnailImage: nil)
+public struct InstagramConfigurationIntent: WidgetConfigurationIntent {
+    public static var title: LocalizedStringResource = "Instagram Ayarları"
+    public static var description = IntentDescription("Masaüstündeki bu widget için Instagram hesabını, temasını ve güncelleme sıklığını belirleyin.")
+
+    @Parameter(title: "Kullanıcı Adı (@kullanici)", default: "@uykusuztosba")
+    public var username: String
+
+    @Parameter(title: "Görünüm Teması", default: .neon)
+    public var theme: WidgetTheme
+
+    @Parameter(title: "Yenileme Sıklığı", default: .sixHours)
+    public var refreshInterval: WidgetRefreshInterval
+
+    public init() {}
+
+    public init(username: String = "@uykusuztosba", theme: WidgetTheme = .neon, refreshInterval: WidgetRefreshInterval = .sixHours) {
+        self.username = username
+        self.theme = theme
+        self.refreshInterval = refreshInterval
     }
+}
 
-    func snapshot(for configuration: SelectAccountIntent, in context: Context) async -> SocialTimelineEntry {
-        return await loadEntry(for: configuration)
+// MARK: - 3. TikTok Intent (Per-Widget Configuration on macOS Desktop)
+@available(macOS 14.0, *)
+public struct TikTokConfigurationIntent: WidgetConfigurationIntent {
+    public static var title: LocalizedStringResource = "TikTok Ayarları"
+    public static var description = IntentDescription("Masaüstündeki bu widget için TikTok hesabını, temasını ve güncelleme sıklığını belirleyin.")
+
+    @Parameter(title: "Kullanıcı Adı (@kullanici)", default: "@uykusuztosba")
+    public var username: String
+
+    @Parameter(title: "Görünüm Teması", default: .dark)
+    public var theme: WidgetTheme
+
+    @Parameter(title: "Yenileme Sıklığı", default: .sixHours)
+    public var refreshInterval: WidgetRefreshInterval
+
+    public init() {}
+
+    public init(username: String = "@uykusuztosba", theme: WidgetTheme = .dark, refreshInterval: WidgetRefreshInterval = .sixHours) {
+        self.username = username
+        self.theme = theme
+        self.refreshInterval = refreshInterval
     }
+}
 
-    func timeline(for configuration: SelectAccountIntent, in context: Context) async -> Timeline<SocialTimelineEntry> {
-        let entry = await loadEntry(for: configuration)
-        let intervalHours = configuration.refreshInterval.rawValue
-
-        let nextDate = Calendar.current.date(byAdding: .hour, value: intervalHours, to: Date())
-            ?? Date().addingTimeInterval(TimeInterval(intervalHours * 3600))
-
-        return Timeline(entries: [entry], policy: .after(nextDate))
-    }
-
-    // MARK: - Entry Loader
-    private func loadEntry(for configuration: SelectAccountIntent) async -> SocialTimelineEntry {
-        let themeName = configuration.theme.rawValue
-
-        // Case 1: Custom handle specified
-        if configuration.slot == .custom {
-            let handle = configuration.customHandle.trimmingCharacters(in: .whitespacesAndNewlines)
-            let platform = configuration.customPlatform.toSocialPlatform()
-            if !handle.isEmpty {
-                return await fetchCustomLiveEntry(platform: platform, handle: handle, theme: themeName)
-            }
+// MARK: - Data Loader & Cache Engine
+enum SocialDataLoader {
+    static func containerURL() -> URL {
+        var candidates: [URL] = []
+        if let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.ufukcelen.youtubewidget") {
+            candidates.append(groupURL.appendingPathComponent("Library/Application Support/YouTubeWidget", isDirectory: true))
         }
-
-        // Case 2: Slot selected (.slot1, .slot2, .slot3, .slot4)
-        let slotID: String
-        let fallbackPlatform: SocialPlatform
-        switch configuration.slot {
-        case .slot2:
-            slotID = "youtube2"
-            fallbackPlatform = .youtube
-        case .slot3:
-            slotID = "instagram"
-            fallbackPlatform = .instagram
-        case .slot4:
-            slotID = "tiktok"
-            fallbackPlatform = .tiktok
-        default:
-            slotID = "youtube1"
-            fallbackPlatform = .youtube
-        }
-
-        // Try to load saved account from shared_data.json
-        if var saved = loadLocalStats(forSlot: slotID) {
-            if themeName != "red" {
-                saved.theme = themeName
-            }
-            let avatar = loadAvatar(slotID: slotID)
-            let thumb = loadThumbnail(slotID: slotID)
-            return SocialTimelineEntry(date: Date(), stats: saved, avatarImage: avatar, thumbnailImage: thumb)
-        }
-
-        // If not saved yet, try slot1 fallback or default sample
-        if slotID != "youtube1", var primary = loadLocalStats(forSlot: "youtube1") {
-            if themeName != "red" {
-                primary.theme = themeName
-            }
-            let avatar = loadAvatar(slotID: "youtube1")
-            let thumb = loadThumbnail(slotID: "youtube1")
-            return SocialTimelineEntry(date: Date(), stats: primary, avatarImage: avatar, thumbnailImage: thumb)
-        }
-
-        let sample = SocialAccountStats.defaultSample(for: slotID, platform: fallbackPlatform)
-        return SocialTimelineEntry(date: Date(), stats: sample, avatarImage: nil, thumbnailImage: nil)
-    }
-
-    private func fetchCustomLiveEntry(platform: SocialPlatform, handle: String, theme: String) async -> SocialTimelineEntry {
-        let safeKey = "custom_\(platform.rawValue)_\(handle.replacingOccurrences(of: "@", with: "").replacingOccurrences(of: "/", with: "_"))"
-
-        var stats: SocialAccountStats? = nil
-        do {
-            stats = try await SocialService.shared.fetchStats(
-                slotID: safeKey,
-                platform: platform,
-                input: handle,
-                apiKey: nil,
-                theme: theme
-            )
-        } catch {
-            print("[WidgetProvider] Live fetch error: \(error.localizedDescription)")
-        }
-
-        let dir = containerURL()
-        var avatarImg: NSImage? = nil
-        var thumbImg: NSImage? = nil
-
-        if let live = stats {
-            // Cache images locally
-            if let avURLStr = live.avatarURL, let url = URL(string: avURLStr),
-               let (data, _) = try? await URLSession.shared.data(from: url) {
-                avatarImg = NSImage(data: data)
-                let avFile = dir.appendingPathComponent("avatar_\(safeKey).png")
-                try? data.write(to: avFile)
-            }
-            if let thURLStr = live.thumbnailURL, let url = URL(string: thURLStr),
-               let (data, _) = try? await URLSession.shared.data(from: url) {
-                thumbImg = NSImage(data: data)
-                let thFile = dir.appendingPathComponent("thumb_\(safeKey).png")
-                try? data.write(to: thFile)
-            }
-        }
-
-        let finalStats = stats ?? SocialAccountStats.defaultSample(for: safeKey, platform: platform)
-        return SocialTimelineEntry(date: Date(), stats: finalStats, avatarImage: avatarImg, thumbnailImage: thumbImg)
-    }
-
-    // MARK: - Local Data & Image Helpers
-    private func containerURL() -> URL {
-        // 1. Sandboxed Application Support Directory
-        if let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-            let candidate = appSupport.appendingPathComponent("YouTubeWidget", isDirectory: true)
-            let file = candidate.appendingPathComponent("shared_data.json")
-            if FileManager.default.fileExists(atPath: file.path) {
-                return candidate
-            }
-        }
-
-        // 2. Direct Container path if running outside or with home directory
         let home = FileManager.default.homeDirectoryForCurrentUser
-        let direct = home.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/Library/Application Support/YouTubeWidget", isDirectory: true)
-        if FileManager.default.fileExists(atPath: direct.appendingPathComponent("shared_data.json").path) {
-            return direct
+        candidates.append(home.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/Library/Application Support/YouTubeWidget", isDirectory: true))
+        if let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            candidates.append(appSupport.appendingPathComponent("YouTubeWidget", isDirectory: true))
         }
+        candidates.append(home.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget/Data/Library/Application Support/YouTubeWidget", isDirectory: true))
 
-        // 3. Fallback standard Application Support
-        let fallback = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("YouTubeWidget", isDirectory: true)
-        try? FileManager.default.createDirectory(at: fallback, withIntermediateDirectories: true)
-        return fallback
+        for dir in candidates {
+            let file = dir.appendingPathComponent("shared_data.json")
+            if FileManager.default.fileExists(atPath: file.path) {
+                return dir
+            }
+        }
+        return candidates.first ?? FileManager.default.temporaryDirectory
     }
 
-    private func loadLocalStats(forSlot slotID: String) -> SocialAccountStats? {
+    static func safeKey(_ str: String) -> String {
+        return str.replacingOccurrences(of: "@", with: "")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: " ", with: "")
+            .lowercased()
+    }
+
+    static func loadFromCache(platform: SocialPlatform, handle: String) -> SocialAccountStats? {
         let dir = containerURL()
         let file = dir.appendingPathComponent("shared_data.json")
-
         guard let data = try? Data(contentsOf: file),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let accountsDict = json["accounts"] as? [String: [String: Any]] else {
             return nil
         }
 
-        // 1. Exact slot key match
-        if let slotData = accountsDict[slotID],
-           let serialized = try? JSONSerialization.data(withJSONObject: slotData),
-           let acc = try? JSONDecoder().decode(SocialAccountStats.self, from: serialized) {
-            return acc
-        }
+        let targetClean = safeKey(handle)
 
-        // 2. Legacy fallback for youtube1
-        if slotID == "youtube1", let legacyStats = json["stats"] as? [String: Any],
-           let serialized = try? JSONSerialization.data(withJSONObject: legacyStats),
-           let ytStats = try? JSONDecoder().decode(YouTubeStats.self, from: serialized) {
-            let th = json["theme"] as? String ?? "red"
-            return SocialAccountStats(
-                slotID: "youtube1",
-                platform: .youtube,
-                title: ytStats.channelTitle,
-                handle: ytStats.handle,
-                mainStatCount: ytStats.subscriberCount,
-                secondaryTitle: ytStats.latestShortTitle,
-                secondaryValue: ytStats.latestShortViews,
-                avatarURL: ytStats.avatarURL,
-                thumbnailURL: ytStats.latestShortThumbnail,
-                profileURL: ytStats.handle.starts(with: "@") ? "https://www.youtube.com/\(ytStats.handle)" : "https://www.youtube.com",
-                contentURL: ytStats.latestShortURL,
-                theme: th,
-                lastUpdated: ytStats.lastUpdated,
-                isConfigured: ytStats.isConfigured
-            )
+        // 1. Direct handle match only - never fall back to global platform slot!
+        for (_, val) in accountsDict {
+            if let accData = try? JSONSerialization.data(withJSONObject: val),
+               let acc = try? JSONDecoder().decode(SocialAccountStats.self, from: accData) {
+                if safeKey(acc.handle) == targetClean && acc.platform == platform {
+                    return acc
+                }
+            }
         }
 
         return nil
     }
 
-    private func loadAvatar(slotID: String) -> NSImage? {
+    static func saveToCache(stats: SocialAccountStats) {
         let dir = containerURL()
-        let candidates = [
-            "avatar_\(slotID).png",
-            "avatar.png"
-        ]
-        for name in candidates {
-            let file = dir.appendingPathComponent(name)
-            if let data = try? Data(contentsOf: file), let img = NSImage(data: data) {
+        let file = dir.appendingPathComponent("shared_data.json")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+        var dict: [String: Any] = [:]
+        if let data = try? Data(contentsOf: file),
+           let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            dict = existing
+        }
+
+        var accounts = dict["accounts"] as? [String: [String: Any]] ?? [:]
+        if let encoded = try? JSONEncoder().encode(stats),
+           let statDict = try? JSONSerialization.jsonObject(with: encoded) as? [String: Any] {
+            // Save ONLY under the specific handle so channels never overwrite each other!
+            accounts[safeKey(stats.handle)] = statDict
+        }
+        dict["accounts"] = accounts
+        dict["lastSaved"] = Date().timeIntervalSince1970
+
+        if let finalData = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted) {
+            try? finalData.write(to: file)
+        }
+    }
+
+    static func loadImage(urlStr: String?, key: String) async -> NSImage? {
+        guard let urlStr = urlStr, !urlStr.isEmpty else { return nil }
+        let dir = containerURL()
+        let file = dir.appendingPathComponent(key)
+
+        // 1. Local disk cache
+        if let data = try? Data(contentsOf: file), let img = NSImage(data: data) {
+            return img
+        }
+
+        // 2. Live fetch
+        guard let url = URL(string: urlStr) else { return nil }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            if let img = NSImage(data: data) {
+                try? data.write(to: file)
                 return img
             }
+        } catch {
+            return nil
         }
         return nil
     }
 
-    private func loadThumbnail(slotID: String) -> NSImage? {
-        let dir = containerURL()
-        let candidates = [
-            "thumbnail_\(slotID).png",
-            "thumbnail.png"
-        ]
-        for name in candidates {
-            let file = dir.appendingPathComponent(name)
-            if let data = try? Data(contentsOf: file), let img = NSImage(data: data) {
-                return img
+    static func load(platform: SocialPlatform, rawQuery: String, theme: String) async -> (SocialAccountStats, NSImage?, NSImage?) {
+        let trimmed = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        let defaultHandle: String
+        switch platform {
+        case .youtube: defaultHandle = "@RadioMocas"
+        case .instagram: defaultHandle = "@uykusuztosba"
+        case .tiktok: defaultHandle = "@uykusuztosba"
+        }
+        let handle = trimmed.isEmpty ? defaultHandle : trimmed
+
+        // 1. Try local cache for this specific handle
+        var stats = loadFromCache(platform: platform, handle: handle)
+
+        // 2. Live fetch if no cache or older than 30 minutes
+        let isStale = stats == nil || Date().timeIntervalSince(stats?.lastUpdated ?? .distantPast) > 1800
+        if isStale {
+            if let live = try? await SocialService.shared.fetchStats(slotID: safeKey(handle), platform: platform, input: handle, theme: theme) {
+                stats = live
+                saveToCache(stats: live)
             }
         }
-        return nil
+
+        // 3. If stats is nil (e.g. invalid handle, typo like @raidomocas, or offline), build informative fallback
+        var finalStats: SocialAccountStats
+        if let s = stats {
+            finalStats = s
+        } else {
+            finalStats = SocialAccountStats.defaultSample(for: handle, platform: platform)
+            finalStats.handle = handle.hasPrefix("@") ? handle : "@\(handle)"
+            finalStats.title = handle.replacingOccurrences(of: "@", with: "")
+            finalStats.mainStatCount = "Bulunamadı"
+            finalStats.secondaryTitle = "Kanal adını kontrol edin"
+            finalStats.secondaryValue = "--"
+        }
+
+        finalStats.theme = theme
+
+        let keyHandle = safeKey(finalStats.handle)
+        let avatar = await loadImage(urlStr: finalStats.avatarURL, key: "\(platform.rawValue)_\(keyHandle)_avatar.jpg")
+        let thumb = await loadImage(urlStr: finalStats.thumbnailURL, key: "\(platform.rawValue)_\(keyHandle)_thumb.jpg")
+
+        return (finalStats, avatar, thumb)
+    }
+}
+
+// MARK: - 1. YouTube Timeline Provider
+@available(macOS 14.0, *)
+struct YouTubeAppIntentTimelineProvider: AppIntentTimelineProvider {
+    func placeholder(in context: Context) -> SocialTimelineEntry {
+        let stats = SocialAccountStats.defaultSample(for: "youtube", platform: .youtube)
+        return SocialTimelineEntry(date: Date(), stats: stats, avatarImage: nil, thumbnailImage: nil)
+    }
+
+    func snapshot(for configuration: YouTubeConfigurationIntent, in context: Context) async -> SocialTimelineEntry {
+        let (stats, avatar, thumb) = await SocialDataLoader.load(platform: .youtube, rawQuery: configuration.channel, theme: configuration.theme.rawValue)
+        return SocialTimelineEntry(date: Date(), stats: stats, avatarImage: avatar, thumbnailImage: thumb)
+    }
+
+    func timeline(for configuration: YouTubeConfigurationIntent, in context: Context) async -> Timeline<SocialTimelineEntry> {
+        let (stats, avatar, thumb) = await SocialDataLoader.load(platform: .youtube, rawQuery: configuration.channel, theme: configuration.theme.rawValue)
+        let entry = SocialTimelineEntry(date: Date(), stats: stats, avatarImage: avatar, thumbnailImage: thumb)
+
+        let intervalHours = configuration.refreshInterval.rawValue
+        let nextDate = Calendar.current.date(byAdding: .hour, value: intervalHours, to: Date())
+            ?? Date().addingTimeInterval(TimeInterval(intervalHours * 3600))
+        return Timeline(entries: [entry], policy: .after(nextDate))
+    }
+}
+
+// MARK: - 2. Instagram Timeline Provider
+@available(macOS 14.0, *)
+struct InstagramAppIntentTimelineProvider: AppIntentTimelineProvider {
+    func placeholder(in context: Context) -> SocialTimelineEntry {
+        let stats = SocialAccountStats.defaultSample(for: "instagram", platform: .instagram)
+        return SocialTimelineEntry(date: Date(), stats: stats, avatarImage: nil, thumbnailImage: nil)
+    }
+
+    func snapshot(for configuration: InstagramConfigurationIntent, in context: Context) async -> SocialTimelineEntry {
+        let (stats, avatar, thumb) = await SocialDataLoader.load(platform: .instagram, rawQuery: configuration.username, theme: configuration.theme.rawValue)
+        return SocialTimelineEntry(date: Date(), stats: stats, avatarImage: avatar, thumbnailImage: thumb)
+    }
+
+    func timeline(for configuration: InstagramConfigurationIntent, in context: Context) async -> Timeline<SocialTimelineEntry> {
+        let (stats, avatar, thumb) = await SocialDataLoader.load(platform: .instagram, rawQuery: configuration.username, theme: configuration.theme.rawValue)
+        let entry = SocialTimelineEntry(date: Date(), stats: stats, avatarImage: avatar, thumbnailImage: thumb)
+
+        let intervalHours = configuration.refreshInterval.rawValue
+        let nextDate = Calendar.current.date(byAdding: .hour, value: intervalHours, to: Date())
+            ?? Date().addingTimeInterval(TimeInterval(intervalHours * 3600))
+        return Timeline(entries: [entry], policy: .after(nextDate))
+    }
+}
+
+// MARK: - 3. TikTok Timeline Provider
+@available(macOS 14.0, *)
+struct TikTokAppIntentTimelineProvider: AppIntentTimelineProvider {
+    func placeholder(in context: Context) -> SocialTimelineEntry {
+        let stats = SocialAccountStats.defaultSample(for: "tiktok", platform: .tiktok)
+        return SocialTimelineEntry(date: Date(), stats: stats, avatarImage: nil, thumbnailImage: nil)
+    }
+
+    func snapshot(for configuration: TikTokConfigurationIntent, in context: Context) async -> SocialTimelineEntry {
+        let (stats, avatar, thumb) = await SocialDataLoader.load(platform: .tiktok, rawQuery: configuration.username, theme: configuration.theme.rawValue)
+        return SocialTimelineEntry(date: Date(), stats: stats, avatarImage: avatar, thumbnailImage: thumb)
+    }
+
+    func timeline(for configuration: TikTokConfigurationIntent, in context: Context) async -> Timeline<SocialTimelineEntry> {
+        let (stats, avatar, thumb) = await SocialDataLoader.load(platform: .tiktok, rawQuery: configuration.username, theme: configuration.theme.rawValue)
+        let entry = SocialTimelineEntry(date: Date(), stats: stats, avatarImage: avatar, thumbnailImage: thumb)
+
+        let intervalHours = configuration.refreshInterval.rawValue
+        let nextDate = Calendar.current.date(byAdding: .hour, value: intervalHours, to: Date())
+            ?? Date().addingTimeInterval(TimeInterval(intervalHours * 3600))
+        return Timeline(entries: [entry], policy: .after(nextDate))
     }
 }
 
@@ -365,107 +363,81 @@ struct SocialWidgetEntryView: View {
         }
     }
 
-    // MARK: - SystemSmall View (Abone / Takipçi Sayısı)
+    // MARK: - SystemSmall View (Clean widgetURL with no child Links)
     private var smallWidgetView: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Header Row: Avatar + Title + Settings Gear Button
+            // Header Row: Avatar + Title + Platform Badge
             HStack(spacing: 7) {
-                // Avatar + Platform icon
-                Link(destination: entry.stats.validProfileURL) {
-                    ZStack(alignment: .bottomTrailing) {
-                        if let img = entry.avatarImage {
-                            Image(nsImage: img)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 34, height: 34)
-                                .clipShape(Circle())
-                        } else {
-                            Circle()
-                                .fill(Color.primary.opacity(0.15))
-                                .frame(width: 34, height: 34)
-                                .overlay(
-                                    Image(systemName: "person.crop.circle.fill")
-                                        .font(.system(size: 22))
-                                        .foregroundColor(.secondary)
-                                )
-                        }
-
-                        // Mini platform badge
+                ZStack(alignment: .bottomTrailing) {
+                    if let img = entry.avatarImage {
+                        Image(nsImage: img)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 34, height: 34)
+                            .clipShape(Circle())
+                    } else {
                         Circle()
-                            .fill(Color(hex: entry.stats.platform.brandColorHex))
-                            .frame(width: 13, height: 13)
+                            .fill(Color.primary.opacity(0.18))
+                            .frame(width: 34, height: 34)
                             .overlay(
-                                Image(systemName: entry.stats.platform.iconName)
-                                    .font(.system(size: 6, weight: .bold))
-                                    .foregroundColor(.white)
+                                Image(systemName: "person.crop.circle.fill")
+                                    .font(.system(size: 22))
+                                    .foregroundColor(.white.opacity(0.7))
                             )
-                            .offset(x: 2, y: 2)
                     }
-                }
-                .buttonStyle(.plain)
 
-                // Title + Handle
-                Link(destination: entry.stats.validProfileURL) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(entry.stats.title)
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-
-                        Text(entry.stats.handle)
-                            .font(.system(size: 10, weight: .medium, design: .rounded))
-                            .foregroundColor(.white.opacity(0.75))
-                            .lineLimit(1)
-                    }
+                    Circle()
+                        .fill(Color(hex: entry.stats.platform.brandColorHex))
+                        .frame(width: 13, height: 13)
+                        .overlay(
+                            Image(systemName: entry.stats.platform.iconName)
+                                .font(.system(size: 6, weight: .bold))
+                                .foregroundColor(.white)
+                        )
+                        .offset(x: 2, y: 2)
                 }
-                .buttonStyle(.plain)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(entry.stats.title.isEmpty ? entry.stats.platform.displayName : entry.stats.title)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+
+                    Text(entry.stats.handle)
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.75))
+                        .lineLimit(1)
+                }
 
                 Spacer(minLength: 0)
-
-                // ⚙️ Settings Gear Button (Directly opens Settings for this slot)
-                Link(destination: URL(string: "youtubewidget://settings?slot=\(entry.stats.slotID)")!) {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.85))
-                        .frame(width: 22, height: 22)
-                        .background(
-                            Circle()
-                                .fill(Color.black.opacity(0.40))
-                        )
-                }
-                .buttonStyle(.plain)
-                .help("Widget Ayarları & Test")
             }
 
             Spacer(minLength: 0)
 
             // Main Stat Count (Abone / Takipçi)
-            Link(destination: entry.stats.validProfileURL) {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 5) {
-                        Text(entry.stats.mainStatCount)
-                            .font(.system(size: 25, weight: .heavy, design: .rounded))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Text(entry.stats.displayStatNumber)
+                        .font(.system(size: 25, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
 
-                        Circle()
-                            .fill(Color(hex: entry.stats.platform.brandColorHex))
-                            .frame(width: 7, height: 7)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color(hex: entry.stats.platform.brandColorHex).opacity(0.6), lineWidth: 1.5)
-                                    .scaleEffect(1.6)
-                            )
-                    }
-
-                    Text(entry.stats.platform.statTitle)
-                        .font(.system(size: 9, weight: .bold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.7))
-                        .tracking(1.0)
+                    Circle()
+                        .fill(Color(hex: entry.stats.platform.brandColorHex))
+                        .frame(width: 7, height: 7)
+                        .overlay(
+                            Circle()
+                                .stroke(Color(hex: entry.stats.platform.brandColorHex).opacity(0.6), lineWidth: 1.5)
+                                .scaleEffect(1.6)
+                        )
                 }
+
+                Text(entry.stats.platform.statTitle)
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.75))
+                    .tracking(1.0)
             }
-            .buttonStyle(.plain)
 
             Spacer(minLength: 0)
 
@@ -483,10 +455,11 @@ struct SocialWidgetEntryView: View {
 
                 Text("Canlı")
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(.white.opacity(0.75))
             }
         }
         .padding(13)
+        .widgetURL(entry.stats.validProfileURL)
     }
 
     // MARK: - SystemMedium View
@@ -505,13 +478,13 @@ struct SocialWidgetEntryView: View {
                                     .clipShape(Circle())
                             } else {
                                 Circle()
-                                    .fill(Color.primary.opacity(0.15))
+                                    .fill(Color.primary.opacity(0.18))
                                     .frame(width: 32, height: 32)
                                     .overlay(
                                         Image(systemName: "person.crop.circle.fill")
                                             .font(.system(size: 20))
-                                            .foregroundColor(.secondary)
-                                )
+                                            .foregroundColor(.white.opacity(0.7))
+                                    )
                             }
 
                             Circle()
@@ -529,7 +502,7 @@ struct SocialWidgetEntryView: View {
 
                     Link(destination: entry.stats.validProfileURL) {
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(entry.stats.title)
+                            Text(entry.stats.title.isEmpty ? entry.stats.platform.displayName : entry.stats.title)
                                 .font(.system(size: 12, weight: .bold, design: .rounded))
                                 .foregroundColor(.white)
                                 .lineLimit(1)
@@ -543,207 +516,142 @@ struct SocialWidgetEntryView: View {
 
                     Spacer(minLength: 0)
 
-                    // ⚙️ Settings Gear Button
-                    Link(destination: URL(string: "youtubewidget://settings?slot=\(entry.stats.slotID)")!) {
+                    // Platform Logo / Settings link
+                    Link(destination: URL(string: "youtubewidget://settings?platform=\(entry.stats.platform.rawValue)")!) {
                         Image(systemName: "gearshape.fill")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 20, height: 20)
-                            .background(
-                                Circle()
-                                    .fill(Color.black.opacity(0.40))
-                            )
+                            .font(.system(size: 10))
+                            .foregroundColor(.white.opacity(0.45))
                     }
                     .buttonStyle(.plain)
-                    .help("Widget Ayarları & Test")
                 }
 
                 Spacer(minLength: 0)
 
-                Link(destination: entry.stats.validProfileURL) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 5) {
-                            Text(entry.stats.mainStatCount)
-                                .font(.system(size: 24, weight: .heavy, design: .rounded))
-                                .foregroundColor(.white)
-                                .lineLimit(1)
+                // Main Metric
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(entry.stats.displayStatNumber)
+                            .font(.system(size: 26, weight: .heavy, design: .rounded))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
 
-                            Circle()
-                                .fill(Color(hex: entry.stats.platform.brandColorHex))
-                                .frame(width: 7, height: 7)
-                        }
-
-                        Text(entry.stats.platform.statTitle)
-                            .font(.system(size: 8, weight: .bold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.7))
-                            .tracking(1.0)
+                        Circle()
+                            .fill(Color(hex: entry.stats.platform.brandColorHex))
+                            .frame(width: 7, height: 7)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color(hex: entry.stats.platform.brandColorHex).opacity(0.6), lineWidth: 1.5)
+                                    .scaleEffect(1.6)
+                            )
                     }
+
+                    Text(entry.stats.platform.statTitle)
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.75))
+                        .tracking(1.0)
                 }
-                .buttonStyle(.plain)
 
                 Spacer(minLength: 0)
 
-                HStack(spacing: 3) {
+                // Footer
+                HStack(spacing: 4) {
                     Image(systemName: entry.stats.platform.iconName)
-                        .font(.system(size: 8))
+                        .font(.system(size: 9))
                     Text(entry.stats.platform.displayName)
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
                 }
                 .foregroundColor(Color(hex: entry.stats.platform.brandColorHex))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Divider()
-                .opacity(0.3)
+                .background(Color.white.opacity(0.12))
 
-            // Right Column: Secondary Content / Card
-            rightContentCard
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(12)
-    }
-
-    @ViewBuilder
-    private var rightContentCard: some View {
-        switch entry.stats.platform {
-        case .youtube:
-            // YouTube: Latest Shorts Card
-            Link(destination: entry.stats.validContentURL) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("SON SHORTS")
-                        .font(.system(size: 8, weight: .heavy, design: .rounded))
-                        .foregroundColor(.red)
-                        .tracking(0.8)
-
-                    HStack(spacing: 8) {
-                        if let thumb = entry.thumbnailImage {
+            // Right Column: Latest Content or Secondary Metric
+            VStack(alignment: .leading, spacing: 6) {
+                if let thumb = entry.thumbnailImage {
+                    Link(destination: entry.stats.validContentURL) {
+                        ZStack(alignment: .bottomLeading) {
                             Image(nsImage: thumb)
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
-                                .frame(width: 44, height: 60)
-                                .cornerRadius(6)
+                                .frame(maxWidth: .infinity, maxHeight: 78)
                                 .clipped()
-                        } else {
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.black.opacity(0.4))
-                                .frame(width: 44, height: 60)
+                                .cornerRadius(8)
                                 .overlay(
-                                    Image(systemName: "play.rectangle.fill")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.secondary)
+                                    LinearGradient(
+                                        colors: [Color.clear, Color.black.opacity(0.75)],
+                                        startPoint: .center,
+                                        endPoint: .bottom
+                                    )
+                                    .cornerRadius(8)
                                 )
-                        }
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(entry.stats.secondaryTitle.isEmpty ? "Son Short Yüklenmedi" : entry.stats.secondaryTitle)
-                                .font(.system(size: 10, weight: .semibold))
+                            if !entry.stats.secondaryValue.isEmpty && entry.stats.secondaryValue != "--" {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "eye.fill")
+                                        .font(.system(size: 8))
+                                    Text(entry.stats.secondaryValue)
+                                        .font(.system(size: 8, weight: .bold))
+                                }
                                 .foregroundColor(.white)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
-
-                            Spacer(minLength: 0)
-
-                            HStack(spacing: 3) {
-                                Text("🔥")
-                                    .font(.system(size: 9))
-                                Text(entry.stats.secondaryValue)
-                                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(Color.black.opacity(0.55))
+                                .cornerRadius(4)
+                                .padding(5)
                             }
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(
-                                Capsule()
-                                    .fill(Color.white.opacity(0.15))
-                            )
                         }
                     }
-                }
-            }
-            .buttonStyle(.plain)
+                    .buttonStyle(.plain)
 
-        case .instagram:
-            // Instagram: Posts & Profile info
-            Link(destination: entry.stats.validProfileURL) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("GÖNDERİLER")
-                        .font(.system(size: 8, weight: .heavy, design: .rounded))
-                        .foregroundColor(Color(hex: "#E1306C"))
-                        .tracking(0.8)
-
+                    if !entry.stats.secondaryTitle.isEmpty {
+                        Text(entry.stats.secondaryTitle)
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(.white.opacity(0.85))
+                            .lineLimit(2)
+                    }
+                } else {
+                    // Secondary Metric Card when no thumbnail
                     VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "photo.stack.fill")
-                                .font(.system(size: 15))
-                                .foregroundColor(Color(hex: "#E1306C"))
+                        Text(entry.stats.secondaryTitle.isEmpty ? entry.stats.platform.secondaryTitle : entry.stats.secondaryTitle)
+                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.75))
+                            .lineLimit(1)
 
-                            Text(entry.stats.secondaryValue)
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                        }
+                        Text(entry.stats.secondaryValue.isEmpty ? "--" : entry.stats.secondaryValue)
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                    .background(Color.white.opacity(0.06))
+                    .cornerRadius(8)
 
-                        Spacer(minLength: 0)
-
-                        HStack {
-                            Text("Profili Aç")
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.8))
+                    Link(destination: entry.stats.validProfileURL) {
+                        HStack(spacing: 4) {
+                            Text("Profile Git")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(.white.opacity(0.85))
                             Image(systemName: "arrow.up.right")
                                 .font(.system(size: 8))
-                                .foregroundColor(.white.opacity(0.8))
+                                .foregroundColor(.white.opacity(0.85))
                         }
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(
                             Capsule()
-                                .fill(Color.white.opacity(0.12))
+                                .fill(Color.white.opacity(0.15))
                         )
                     }
+                    .buttonStyle(.plain)
                 }
             }
-            .buttonStyle(.plain)
-
-        case .tiktok:
-            // TikTok: Likes & Profile info
-            Link(destination: entry.stats.validProfileURL) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("BEĞENİLER")
-                        .font(.system(size: 8, weight: .heavy, design: .rounded))
-                        .foregroundColor(Color(hex: "#00F2FE"))
-                        .tracking(0.8)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "heart.fill")
-                                .font(.system(size: 15))
-                                .foregroundColor(.pink)
-
-                            Text(entry.stats.secondaryValue)
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-
-                        Spacer(minLength: 0)
-
-                        HStack {
-                            Text("TikTok'u Aç")
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.8))
-                            Image(systemName: "arrow.up.right")
-                                .font(.system(size: 8))
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(Color.white.opacity(0.12))
-                        )
-                    }
-                }
-            }
-            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(13)
     }
 
     @ViewBuilder
@@ -751,20 +659,27 @@ struct SocialWidgetEntryView: View {
         switch entry.stats.theme {
         case "dark":
             ZStack {
-                Color.black.opacity(0.88)
+                Color(red: 0.12, green: 0.12, blue: 0.14)
                 LinearGradient(
-                    colors: [Color.white.opacity(0.08), Color.black.opacity(0.4)],
+                    colors: [Color.white.opacity(0.08), Color.black.opacity(0.45)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
             }
         case "glass":
-            Color.black.opacity(0.2)
+            ZStack {
+                Color.black.opacity(0.55)
+                LinearGradient(
+                    colors: [Color.white.opacity(0.12), Color.white.opacity(0.03)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
         case "neon":
             ZStack {
-                Color.black.opacity(0.5)
+                Color(red: 0.08, green: 0.05, blue: 0.15)
                 LinearGradient(
-                    colors: [Color(red: 0.9, green: 0.0, blue: 0.4).opacity(0.4), Color(red: 0.0, green: 0.6, blue: 0.9).opacity(0.3)],
+                    colors: [Color(red: 0.85, green: 0.1, blue: 0.5).opacity(0.45), Color(red: 0.1, green: 0.5, blue: 0.9).opacity(0.35)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -772,9 +687,9 @@ struct SocialWidgetEntryView: View {
         default:
             // "red"
             ZStack {
-                Color.black.opacity(0.38)
+                Color(red: 0.14, green: 0.04, blue: 0.04)
                 LinearGradient(
-                    colors: [Color.red.opacity(0.30), Color.black.opacity(0.12)],
+                    colors: [Color(red: 0.85, green: 0.1, blue: 0.1).opacity(0.50), Color.black.opacity(0.45)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -806,23 +721,70 @@ extension Color {
     }
 }
 
-// MARK: - Single Unified Widget Entry Point
+// MARK: - 3 Independent AppIntent-Configurable Widgets
 @available(macOS 14.0, *)
-@main
-struct YouTubeSocialWidget: Widget {
-    let kind: String = "com.ufukcelen.youtubewidget.extension"
+struct YouTubeWidget: Widget {
+    let kind: String = "com.ufukcelen.youtubewidget.intent.youtube"
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(
             kind: kind,
-            intent: SelectAccountIntent.self,
-            provider: SocialAppIntentTimelineProvider()
+            intent: YouTubeConfigurationIntent.self,
+            provider: YouTubeAppIntentTimelineProvider()
         ) { entry in
             SocialWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("YouTube & Sosyal Takip")
-        .description("Masaüstünüzde YouTube, Instagram veya TikTok hesaplarınızı canlı takip edin.")
+        .configurationDisplayName("YouTube")
+        .description("YouTube abone sayınızı ve son Shorts videonuzu takip edin. Sağ tıkla kanalınızı belirleyin.")
         .supportedFamilies([.systemSmall, .systemMedium])
         .contentMarginsDisabled()
+    }
+}
+
+@available(macOS 14.0, *)
+struct InstagramWidget: Widget {
+    let kind: String = "com.ufukcelen.youtubewidget.intent.instagram"
+
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(
+            kind: kind,
+            intent: InstagramConfigurationIntent.self,
+            provider: InstagramAppIntentTimelineProvider()
+        ) { entry in
+            SocialWidgetEntryView(entry: entry)
+        }
+        .configurationDisplayName("Instagram")
+        .description("Instagram takipçi ve gönderi sayınızı takip edin. Sağ tıkla kullanıcı adınızı belirleyin.")
+        .supportedFamilies([.systemSmall, .systemMedium])
+        .contentMarginsDisabled()
+    }
+}
+
+@available(macOS 14.0, *)
+struct TikTokWidget: Widget {
+    let kind: String = "com.ufukcelen.youtubewidget.intent.tiktok"
+
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(
+            kind: kind,
+            intent: TikTokConfigurationIntent.self,
+            provider: TikTokAppIntentTimelineProvider()
+        ) { entry in
+            SocialWidgetEntryView(entry: entry)
+        }
+        .configurationDisplayName("TikTok")
+        .description("TikTok takipçi ve beğeni sayınızı takip edin. Sağ tıkla kullanıcı adınızı belirleyin.")
+        .supportedFamilies([.systemSmall, .systemMedium])
+        .contentMarginsDisabled()
+    }
+}
+
+// MARK: - Multi-Widget Bundle
+@main
+struct SocialWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        YouTubeWidget()
+        InstagramWidget()
+        TikTokWidget()
     }
 }

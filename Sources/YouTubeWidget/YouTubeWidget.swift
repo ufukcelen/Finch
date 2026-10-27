@@ -13,26 +13,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Prevent macOS from killing the app in background (LSUIElement mode)
         ProcessInfo.processInfo.disableAutomaticTermination("Keep app alive for widget interactions")
-
-        // Open settings window on initial launch (from Spotlight, Finder, etc.)
-        Task { @MainActor in
-            DesktopWindowManager.shared.openSettingsWindow(slot: nil)
-        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
-            let slotParam = URLComponents(url: url, resolvingAgainstBaseURL: false)?
-                .queryItems?.first(where: { $0.name == "slot" })?.value
-            Task { @MainActor in
-                DesktopWindowManager.shared.openSettingsWindow(slot: slotParam)
+            if url.scheme == "http" || url.scheme == "https" {
+                // Widget was clicked -> Open the profile or content in default browser (Safari, Chrome, etc.)
+                NSWorkspace.shared.open(url)
+            } else if url.scheme == "youtubewidget" || url.scheme == "socialwidget" {
+                // Settings URL scheme -> Open settings window
+                let platformParam = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                    .queryItems?.first(where: { $0.name == "platform" })?.value
+                Task { @MainActor in
+                    DesktopWindowManager.shared.openSettingsWindow(slot: platformParam)
+                }
             }
         }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        Task { @MainActor in
-            DesktopWindowManager.shared.openSettingsWindow(slot: nil)
+        // Only open settings window if the user directly clicked the app icon in Finder/Dock and no window is open
+        if !flag {
+            Task { @MainActor in
+                DesktopWindowManager.shared.openSettingsWindow(slot: nil)
+            }
         }
         return true
     }

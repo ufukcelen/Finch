@@ -17,15 +17,20 @@ public final class YouTubeService: @unchecked Sendable {
     public func fetchStats(channelInput: String, apiKey: String? = nil) async throws -> YouTubeStats {
         let trimmed = channelInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
+            DebugLogger.shared.log(.error, tag: "YouTubeService", message: "Girdi boş.")
             throw YouTubeError.invalidInput("Lütfen bir YouTube kanal adı veya bağlantısı girin.")
         }
 
+        DebugLogger.shared.log(.info, tag: "YouTubeService", message: "Kanal aranıyor: '\(trimmed)'")
+
         // If API key is provided and non-empty, use YouTube Data API v3
         if let key = apiKey?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty {
+            DebugLogger.shared.log(.info, tag: "YouTubeService", message: "API v3 anahtarı ile sorgulanıyor.")
             return try await fetchViaAPI(channelInput: trimmed, apiKey: key)
         }
 
         // Otherwise use direct public fetching
+        DebugLogger.shared.log(.info, tag: "YouTubeService", message: "Doğrudan web kazıma ile sorgulanıyor.")
         return try await fetchViaPublicData(channelInput: trimmed)
     }
 
@@ -34,8 +39,11 @@ public final class YouTubeService: @unchecked Sendable {
         let (channelURL, handleDisplay) = resolveChannelShortsURL(from: channelInput)
         
         guard let url = URL(string: channelURL) else {
+            DebugLogger.shared.log(.error, tag: "YouTubeService", message: "Geçersiz URL: \(channelURL)")
             throw YouTubeError.invalidURL("Geçersiz YouTube URL adresi: \(channelURL)")
         }
+
+        DebugLogger.shared.log(.debug, tag: "YouTubeService", message: "İstek atılıyor: \(url.absoluteString)")
 
         var request = URLRequest(url: url)
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36", forHTTPHeaderField: "User-Agent")
@@ -46,30 +54,45 @@ public final class YouTubeService: @unchecked Sendable {
 
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+            DebugLogger.shared.log(.error, tag: "YouTubeService", message: "HTTP yanıt kodu hatası: \(code)")
             throw YouTubeError.networkError("YouTube sayfasına ulaşılamadı (HTTP \(code)). Lütfen kanal adını kontrol edin.")
         }
 
         guard let html = String(data: data, encoding: .utf8) else {
+            DebugLogger.shared.log(.error, tag: "YouTubeService", message: "HTML verisi utf8 olarak çözülemedi.")
             throw YouTubeError.parseError("YouTube içeriği okunamadı.")
         }
 
+        DebugLogger.shared.log(.debug, tag: "YouTubeService", message: "HTML alındı, boyut: \(html.count) bayt. Ayrıştırılıyor...")
         return try parsePublicHTML(html: html, fallbackHandle: handleDisplay)
     }
 
     private func parsePublicHTML(html: String, fallbackHandle: String) throws -> YouTubeStats {
-        // Look for ytInitialData in HTML
-        guard let matchRange = html.range(of: "ytInitialData = ") ?? html.range(of: "ytInitialData=") else {
+        // Look for ytInitialData in HTML with multiple possible markers
+        let markers = ["ytInitialData = ", "ytInitialData=", "var ytInitialData = ", "window[\"ytInitialData\"] = "]
+        var matchRange: Range<String.Index>? = nil
+        for marker in markers {
+            if let range = html.range(of: marker) {
+                matchRange = range
+                break
+            }
+        }
+
+        guard let matchRange = matchRange else {
+            DebugLogger.shared.log(.error, tag: "YouTubeService", message: "ytInitialData bulunamadı.")
             throw YouTubeError.parseError("YouTube verisi bulunamadı. Kanal gizli veya mevcut olmayabilir.")
         }
 
         let afterData = html[matchRange.upperBound...]
         guard let endRange = afterData.range(of: ";</script>") ?? afterData.range(of: ";var ") ?? afterData.range(of: ";</") else {
+            DebugLogger.shared.log(.error, tag: "YouTubeService", message: "JSON sonlanma karakteri bulunamadı.")
             throw YouTubeError.parseError("Kanal veri sonu ayrıştırılamadı.")
         }
 
         let jsonString = String(afterData[..<endRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
         guard let jsonData = jsonString.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            DebugLogger.shared.log(.error, tag: "YouTubeService", message: "JSON ayrıştırma hatası.")
             throw YouTubeError.parseError("Kanal verisi JSON formatında okunamadı.")
         }
 
@@ -86,11 +109,10 @@ public final class YouTubeService: @unchecked Sendable {
 
         // Fallbacks if title is empty
         if stats.channelTitle.isEmpty || stats.channelTitle == "YouTube Kanalı" {
-            // Try extracting from <title> in HTML
             if let titleRange = html.range(of: "<title>") {
                 let after = html[titleRange.upperBound...]
                 if let endTitle = after.range(of: " - YouTube</title>") ?? after.range(of: "</title>") {
-                    let pageTitle = String(after[..<endTitle.lowerBound])
+                    let pageTitle = String(after[..<endTitle.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
                     if !pageTitle.isEmpty {
                         stats.channelTitle = pageTitle
                     }
@@ -98,6 +120,7 @@ public final class YouTubeService: @unchecked Sendable {
             }
         }
 
+        DebugLogger.shared.log(.info, tag: "YouTubeService", message: "Başarıyla ayrıştırıldı: '\(stats.channelTitle)', Abone: '\(stats.subscriberCount)', Short: '\(stats.latestShortTitle)'")
         return stats
     }
 
@@ -127,7 +150,7 @@ public final class YouTubeService: @unchecked Sendable {
                                 if partText.starts(with: "@") {
                                     stats.handle = partText
                                 } else if partText.contains("abone") || partText.lowercased().contains("sub") {
-                                    stats.subscriberCount = partText
+                                    stats.subscriberCount = cleanStatCount(partText)
                                 }
                             }
                         }
@@ -154,7 +177,7 @@ public final class YouTubeService: @unchecked Sendable {
             }
             if let subObj = c4Header["subscriberCountText"] as? [String: Any],
                let simpleText = subObj["simpleText"] as? String {
-                stats.subscriberCount = simpleText
+                stats.subscriberCount = cleanStatCount(simpleText)
             }
             if let avatar = c4Header["avatar"] as? [String: Any],
                let thumbs = avatar["thumbnails"] as? [[String: Any]],
@@ -220,12 +243,10 @@ public final class YouTubeService: @unchecked Sendable {
     private func resolveChannelShortsURL(from input: String) -> (url: String, displayHandle: String) {
         var clean = input.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Remove trailing slashes
         while clean.hasSuffix("/") {
             clean.removeLast()
         }
 
-        // If it's a full URL
         if clean.lowercased().hasPrefix("http://") || clean.lowercased().hasPrefix("https://") {
             if clean.contains("/shorts") {
                 return (clean, extractHandleOrPath(from: clean))
@@ -234,12 +255,10 @@ public final class YouTubeService: @unchecked Sendable {
             }
         }
 
-        // If it's a channel ID (starts with UC and is 24 chars)
         if clean.starts(with: "UC") && clean.count == 24 {
             return ("https://www.youtube.com/channel/\(clean)/shorts", clean)
         }
 
-        // Handle (@username or username)
         let handle = clean.starts(with: "@") ? clean : "@\(clean)"
         return ("https://www.youtube.com/\(handle)/shorts", handle)
     }
@@ -278,7 +297,6 @@ public final class YouTubeService: @unchecked Sendable {
             throw YouTubeError.apiError("Kanal bilgileri YouTube API ile bulunamadı.")
         }
 
-        // Channel Info
         if let snippet = firstChan["snippet"] as? [String: Any] {
             stats.channelTitle = snippet["title"] as? String ?? "YouTube Kanalı"
             stats.handle = snippet["customUrl"] as? String ?? "@\(handle)"
@@ -291,11 +309,10 @@ public final class YouTubeService: @unchecked Sendable {
 
         if let statistics = firstChan["statistics"] as? [String: Any] {
             if let countStr = statistics["subscriberCount"] as? String, let count = Int(countStr) {
-                stats.subscriberCount = formatNumber(count) + " abone"
+                stats.subscriberCount = formatNumber(count)
             }
         }
 
-        // Get uploads playlist
         if let contentDetails = firstChan["contentDetails"] as? [String: Any],
            let relatedPlaylists = contentDetails["relatedPlaylists"] as? [String: Any],
            let uploadsId = relatedPlaylists["uploads"] as? String {
@@ -319,7 +336,6 @@ public final class YouTubeService: @unchecked Sendable {
                     stats.latestShortThumbnail = url
                 }
 
-                // Fetch video views
                 let videoEndpoint = "https://www.googleapis.com/youtube/v3/videos?part=statistics&id=\(videoId)&key=\(apiKey)"
                 if let vURL = URL(string: videoEndpoint),
                    let (vidData, _) = try? await session.data(from: vURL),
@@ -335,6 +351,20 @@ public final class YouTubeService: @unchecked Sendable {
         }
 
         return stats
+    }
+
+    private func cleanStatCount(_ text: String) -> String {
+        // Strip common redundant suffixes while preserving numeric values like "2,76 B", "6.63M"
+        var clean = text
+        let suffixes = [" abone", " aboneleri", " subscribers", " subscriber", " subs"]
+        for s in suffixes {
+            if clean.localizedCaseInsensitiveContains(s) {
+                if let r = clean.range(of: s, options: .caseInsensitive) {
+                    clean.removeSubrange(r)
+                }
+            }
+        }
+        return clean.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func formatNumber(_ num: Int) -> String {

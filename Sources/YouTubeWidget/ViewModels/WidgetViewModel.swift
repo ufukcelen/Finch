@@ -88,24 +88,25 @@ public final class WidgetViewModel: ObservableObject {
     // MARK: - Init
     public init() {
         let savedInterval = UserDefaults.standard.integer(forKey: "YTWidget_RefreshInterval")
-        // Allowed intervals: 120 (2h), 360 (6h), 720 (12h), 1440 (24h)
         let validIntervals = [120, 360, 720, 1440]
         self.refreshIntervalMinutes = validIntervals.contains(savedInterval) ? savedInterval : 360
         self.apiKey = UserDefaults.standard.string(forKey: "YTWidget_ApiKey") ?? ""
 
         // Load existing accounts or initialize defaults
         var loaded = SharedDataManager.shared.loadAccounts() ?? [:]
-        if loaded["youtube1"] == nil {
+        if loaded["youtube"] == nil && loaded["youtube1"] == nil {
             let legacyChannel = UserDefaults.standard.string(forKey: "YTWidget_ChannelInput") ?? ""
-            var sample = SocialAccountStats.defaultSample(for: "youtube1", platform: .youtube)
+            var sample = SocialAccountStats.defaultSample(for: "youtube", platform: .youtube)
             if !legacyChannel.isEmpty {
                 sample.handle = legacyChannel
                 sample.isConfigured = true
             }
+            loaded["youtube"] = sample
             loaded["youtube1"] = sample
-        }
-        if loaded["youtube2"] == nil {
-            loaded["youtube2"] = SocialAccountStats.defaultSample(for: "youtube2", platform: .youtube)
+        } else if loaded["youtube"] == nil, let y1 = loaded["youtube1"] {
+            loaded["youtube"] = y1
+        } else if loaded["youtube1"] == nil, let y = loaded["youtube"] {
+            loaded["youtube1"] = y
         }
         if loaded["instagram"] == nil {
             loaded["instagram"] = SocialAccountStats.defaultSample(for: "instagram", platform: .instagram)
@@ -115,6 +116,8 @@ public final class WidgetViewModel: ObservableObject {
         }
 
         self.accounts = loaded
+
+        DebugLogger.shared.log(.info, tag: "WidgetViewModel", message: "WidgetViewModel başlatıldı. Hesap sayısı: \(loaded.count)")
 
         // Start auto-refresh timer (2h, 6h, 12h, or 24h)
         restartTimer()
@@ -138,6 +141,7 @@ public final class WidgetViewModel: ObservableObject {
     ) async throws {
         isLoading = true
         lastErrorMessage = nil
+        DebugLogger.shared.log(.info, tag: "WidgetViewModel", message: "Hesap kaydediliyor: \(slotID) (\(platform.displayName)) -> \(input)")
 
         do {
             let newStats = try await SocialService.shared.fetchStats(
@@ -148,11 +152,18 @@ public final class WidgetViewModel: ObservableObject {
                 theme: theme
             )
             self.accounts[slotID] = newStats
+            if slotID == "youtube" {
+                self.accounts["youtube1"] = newStats
+            } else if slotID == "youtube1" {
+                self.accounts["youtube"] = newStats
+            }
             self.isLoading = false
             syncToSharedData()
+            DebugLogger.shared.log(.info, tag: "WidgetViewModel", message: "Hesap başarıyla kaydedildi: \(slotID)")
         } catch {
             self.isLoading = false
             self.lastErrorMessage = error.localizedDescription
+            DebugLogger.shared.log(.error, tag: "WidgetViewModel", message: "Hesap kaydetme hatası: \(error.localizedDescription)")
             throw error
         }
     }
@@ -162,6 +173,7 @@ public final class WidgetViewModel: ObservableObject {
         let input = acc.handle.isEmpty ? acc.title : acc.handle
         guard !input.isEmpty else { return }
 
+        DebugLogger.shared.log(.info, tag: "WidgetViewModel", message: "Slot yenileniyor: \(slotID)")
         do {
             let updated = try await SocialService.shared.fetchStats(
                 slotID: slotID,
@@ -173,12 +185,13 @@ public final class WidgetViewModel: ObservableObject {
             self.accounts[slotID] = updated
             syncToSharedData()
         } catch {
-            print("[WidgetViewModel] Error refreshing \(slotID): \(error)")
+            DebugLogger.shared.log(.error, tag: "WidgetViewModel", message: "Slot \(slotID) yenileme hatası: \(error)")
         }
     }
 
     public func refreshAll() async {
         isLoading = true
+        DebugLogger.shared.log(.info, tag: "WidgetViewModel", message: "Tüm aktif slotlar yenileniyor...")
         for slot in ["youtube1", "youtube2", "instagram", "tiktok"] {
             if let acc = accounts[slot], acc.isConfigured {
                 await refreshSlot(slot)

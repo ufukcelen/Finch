@@ -1,9 +1,9 @@
 import SwiftUI
 import WidgetKit
+import AppKit
 
 @MainActor
 final class SettingsFormState: ObservableObject {
-    @Published var selectedSlot: String = "youtube1"
     @Published var selectedPlatform: SocialPlatform = .youtube
     @Published var inputHandle: String = "@barisozcan"
     @Published var selectedTheme: String = "red"
@@ -18,30 +18,25 @@ final class SettingsFormState: ObservableObject {
     @Published var saveSuccessMessage: String? = nil
     @Published var saveErrorMessage: String? = nil
 
-    func loadSlot(_ slotID: String, viewModel: WidgetViewModel) {
-        selectedSlot = slotID
-        viewModel.activeSlot = slotID
+    @Published var showDebugSheet: Bool = false
+
+    func loadPlatform(_ platform: SocialPlatform, viewModel: WidgetViewModel) {
+        selectedPlatform = platform
         saveSuccessMessage = nil
         saveErrorMessage = nil
         testResult = nil
 
-        if let acc = viewModel.accounts[slotID] {
-            selectedPlatform = acc.platform
+        let key = platform.rawValue
+        if let acc = viewModel.accounts[key] ?? viewModel.accounts["\(key)1"] {
             inputHandle = acc.handle
             selectedTheme = acc.theme
         } else {
-            switch slotID {
-            case "instagram":
-                selectedPlatform = .instagram
-                inputHandle = "@instagram"
-            case "tiktok":
-                selectedPlatform = .tiktok
-                inputHandle = "@tiktok"
-            default:
-                selectedPlatform = .youtube
-                inputHandle = "@barisozcan"
+            switch platform {
+            case .youtube: inputHandle = "@RadioMocas"
+            case .instagram: inputHandle = "@uykusuztosba"
+            case .tiktok: inputHandle = "@uykusuztosba"
             }
-            selectedTheme = "red"
+            selectedTheme = platform == .youtube ? "red" : "neon"
         }
         selectedInterval = viewModel.refreshIntervalMinutes
         inputApiKey = viewModel.apiKey
@@ -56,13 +51,14 @@ final class SettingsFormState: ObservableObject {
 
         let plat = selectedPlatform
         let key = inputApiKey.isEmpty ? nil : inputApiKey
-        let slot = selectedSlot
         let th = selectedTheme
+
+        DebugLogger.shared.log(.info, tag: "SettingsView", message: "Bağlantı testi başlatıldı: platform=\(plat.displayName), input=\(clean)")
 
         Task {
             do {
                 let stats = try await SocialService.shared.fetchStats(
-                    slotID: slot,
+                    slotID: plat.rawValue,
                     platform: plat,
                     input: clean,
                     apiKey: key,
@@ -83,7 +79,7 @@ final class SettingsFormState: ObservableObject {
         }
     }
 
-    func saveCurrentSlot(viewModel: WidgetViewModel) {
+    func saveCurrentPlatform(viewModel: WidgetViewModel) {
         let clean = inputHandle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
 
@@ -91,7 +87,6 @@ final class SettingsFormState: ObservableObject {
         saveSuccessMessage = nil
         saveErrorMessage = nil
 
-        let slot = selectedSlot
         let plat = selectedPlatform
         let th = selectedTheme
         let key = inputApiKey.isEmpty ? nil : inputApiKey
@@ -102,10 +97,12 @@ final class SettingsFormState: ObservableObject {
             viewModel.apiKey = inputApiKey
         }
 
+        DebugLogger.shared.log(.info, tag: "SettingsView", message: "Kaydetme başlatıldı: platform=\(plat.rawValue), handle=\(clean)")
+
         Task {
             do {
                 try await viewModel.saveAccount(
-                    slotID: slot,
+                    slotID: plat.rawValue,
                     platform: plat,
                     input: clean,
                     theme: th,
@@ -113,7 +110,7 @@ final class SettingsFormState: ObservableObject {
                 )
                 await MainActor.run {
                     self.isSaving = false
-                    self.saveSuccessMessage = "✅ '\(clean)' hesabı kaydedildi! Masaüstü widget'ı hemen güncelleniyor."
+                    self.saveSuccessMessage = "✅ '\(clean)' hesabı kaydedildi! Masaüstü widget'ları güncelleniyor."
                 }
             } catch {
                 await MainActor.run {
@@ -128,6 +125,7 @@ final class SettingsFormState: ObservableObject {
 public struct SettingsView: View {
     @ObservedObject var viewModel: WidgetViewModel
     @StateObject private var form = SettingsFormState()
+    @ObservedObject private var logger = DebugLogger.shared
 
     public init(viewModel: WidgetViewModel) {
         self.viewModel = viewModel
@@ -156,14 +154,26 @@ public struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Sosyal Medya Widget Yöneticisi")
                         .font(.system(size: 15, weight: .bold))
-                    Text("Masaüstündeki her widget için bağımsız kanal ve süre belirleyin.")
+                    Text("Masaüstündeki her widget bağımsız çalışır ve sağ tıklanarak düzenlenebilir.")
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }
 
                 Spacer()
 
-                Text("v0.0.3")
+                Button {
+                    form.showDebugSheet.toggle()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "ladybug.fill")
+                        Text("Hata Ayıklama")
+                    }
+                    .font(.caption.bold())
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Text("v0.0.6")
                     .font(.caption2.bold())
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
@@ -175,19 +185,18 @@ public struct SettingsView: View {
 
             Divider()
 
-            // Slot Tabs (Widget 1, Widget 2, Widget 3, Widget 4)
+            // Platform Tabs (YouTube, Instagram, TikTok)
             VStack(alignment: .leading, spacing: 6) {
-                Text("DÜZENLENECEK WIDGET'I SEÇİN:")
+                Text("VARSAYILAN HESAP & TEST PLATFORMU:")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
 
-                HStack(spacing: 8) {
-                    slotButton(id: "youtube1", title: "Widget 1 (Ana)", defaultPlat: .youtube)
-                    slotButton(id: "youtube2", title: "Widget 2", defaultPlat: .youtube)
-                    slotButton(id: "instagram", title: "Widget 3 (Insta)", defaultPlat: .instagram)
-                    slotButton(id: "tiktok", title: "Widget 4 (TikTok)", defaultPlat: .tiktok)
+                HStack(spacing: 10) {
+                    platformTabButton(platform: .youtube, title: "YouTube")
+                    platformTabButton(platform: .instagram, title: "Instagram")
+                    platformTabButton(platform: .tiktok, title: "TikTok")
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 10)
@@ -199,26 +208,32 @@ public struct SettingsView: View {
             // Scrollable Configuration Form
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    // Platform Selection
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Platform")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.secondary)
+                    // Desktop Widget Guide Card
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 18))
+                            .foregroundColor(.orange)
+                            .padding(.top, 2)
 
-                        Picker("", selection: $form.selectedPlatform) {
-                            Text("🔴 YouTube").tag(SocialPlatform.youtube)
-                            Text("📸 Instagram").tag(SocialPlatform.instagram)
-                            Text("🎵 TikTok").tag(SocialPlatform.tiktok)
-                        }
-                        .pickerStyle(.segmented)
-                        .onChange(of: form.selectedPlatform) { _ in
-                            form.testResult = nil
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Bağımsız Masaüstü Düzenleme (Sağ Tık)")
+                                .font(.system(size: 12, weight: .bold))
+
+                            Text("Masaüstündeki herhangi bir widget'a **sağ tıklayıp 'Araç Takımını Düzenle'** diyerek o widget'ın kanalını, temasını ve güncelleme sıklığını diğerlerinden tamamen bağımsız olarak belirleyebilirsiniz.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.orange.opacity(0.08))
+                    )
 
                     // Account Handle
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("Kanal veya Kullanıcı Adı")
+                        Text("\(form.selectedPlatform.displayName) Kanalı veya Kullanıcı Adı")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.secondary)
 
@@ -263,7 +278,7 @@ public struct SettingsView: View {
                         )
                     }
 
-                    // Refresh Interval (Strictly 2, 6, 12, 24 hours)
+                    // Refresh Interval
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             Text("Güncelleme Sıklığı")
@@ -347,7 +362,7 @@ public struct SettingsView: View {
 
                     // Primary Save & Apply Button
                     Button {
-                        form.saveCurrentSlot(viewModel: viewModel)
+                        form.saveCurrentPlatform(viewModel: viewModel)
                     } label: {
                         HStack {
                             if form.isSaving {
@@ -356,7 +371,7 @@ public struct SettingsView: View {
                             } else {
                                 Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
                             }
-                            Text("Kaydet & Widget'a Uygula")
+                            Text("Kaydet & Masaüstüne Uygula")
                                 .font(.system(size: 13, weight: .bold))
                         }
                         .frame(maxWidth: .infinity)
@@ -375,9 +390,9 @@ public struct SettingsView: View {
             HStack {
                 Button("Örnek Doldur") {
                     switch form.selectedPlatform {
-                    case .youtube: form.inputHandle = "@barisozcan"
-                    case .instagram: form.inputHandle = "@instagram"
-                    case .tiktok: form.inputHandle = "@tiktok"
+                    case .youtube: form.inputHandle = "@RadioMocas"
+                    case .instagram: form.inputHandle = "@uykusuztosba"
+                    case .tiktok: form.inputHandle = "@uykusuztosba"
                     }
                     form.testConnection()
                 }
@@ -395,31 +410,35 @@ public struct SettingsView: View {
             .padding(.vertical, 10)
             .background(Color.primary.opacity(0.02))
         }
-        .frame(width: 540, height: 580)
-        .onAppear {
-            form.loadSlot(viewModel.activeSlot, viewModel: viewModel)
+        .frame(width: 540, height: 600)
+        .sheet(isPresented: $form.showDebugSheet) {
+            debugSheetView
         }
-        .onChange(of: viewModel.activeSlot) { newSlot in
-            form.loadSlot(newSlot, viewModel: viewModel)
+        .onAppear {
+            let plat: SocialPlatform
+            switch viewModel.activeSlot {
+            case "instagram": plat = .instagram
+            case "tiktok": plat = .tiktok
+            default: plat = .youtube
+            }
+            form.loadPlatform(plat, viewModel: viewModel)
         }
     }
 
-    // MARK: - Slot Button Builder
-    @ViewBuilder
-    private func slotButton(id: String, title: String, defaultPlat: SocialPlatform) -> some View {
-        let isSelected = form.selectedSlot == id
-        let acc = viewModel.accounts[id]
-        let currentPlat = acc?.platform ?? defaultPlat
+    // MARK: - Platform Tab Button
+    private func platformTabButton(platform: SocialPlatform, title: String) -> some View {
+        let isSelected = form.selectedPlatform == platform
+        let acc = viewModel.accounts[platform.rawValue] ?? viewModel.accounts["\(platform.rawValue)1"]
 
-        Button {
-            form.loadSlot(id, viewModel: viewModel)
+        return Button {
+            form.loadPlatform(platform, viewModel: viewModel)
         } label: {
             VStack(spacing: 3) {
-                HStack(spacing: 4) {
-                    Image(systemName: currentPlat.iconName)
-                        .font(.system(size: 10))
+                HStack(spacing: 5) {
+                    Image(systemName: platform.iconName)
+                        .font(.system(size: 12))
                     Text(title)
-                        .font(.system(size: 11, weight: isSelected ? .bold : .medium))
+                        .font(.system(size: 12, weight: isSelected ? .bold : .medium))
                 }
 
                 Text(acc?.handle.isEmpty == false ? acc!.handle : "Ayarla")
@@ -428,7 +447,7 @@ public struct SettingsView: View {
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
+            .padding(.vertical, 8)
             .padding(.horizontal, 6)
             .background(
                 RoundedRectangle(cornerRadius: 8)
@@ -439,31 +458,157 @@ public struct SettingsView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Debug Diagnostics Sheet View
+    private var debugSheetView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Hata Ayıklama & Tanı Modu", systemImage: "ladybug.fill")
+                    .font(.headline)
+                Spacer()
+                Button("Kapat") {
+                    form.showDebugSheet = false
+                }
+            }
+            .padding(.bottom, 4)
+
+            // Storage Diagnostic Paths
+            VStack(alignment: .leading, spacing: 4) {
+                Text("DEPOLAMA DOSYA DURUMU:")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.secondary)
+
+                ForEach(SharedDataManager.shared.getStorageDiagnostics(), id: \.path) { diag in
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(diag.exists ? Color.green : Color.red)
+                            .frame(width: 8, height: 8)
+                        Text(diag.path)
+                            .font(.system(size: 9, design: .monospaced))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Text(diag.exists ? "\(diag.sizeBytes) B" : "Yok")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(diag.exists ? .secondary : .red)
+                    }
+                }
+            }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.04)))
+
+            // Live Log Console
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("CANLI HATA AYIKLAMA LOGLARI:")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Button("Kopyala") {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(logger.getRecentLogsText(), forType: .string)
+                    }
+                    .controlSize(.mini)
+
+                    Button("Temizle") {
+                        logger.clear()
+                    }
+                    .controlSize(.mini)
+                }
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(logger.entries) { entry in
+                            Text(entry.formattedText)
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundColor(colorForLevel(entry.level))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    .padding(8)
+                }
+                .frame(height: 220)
+                .background(Color.black.opacity(0.85))
+                .cornerRadius(6)
+            }
+
+            HStack {
+                Button("Log Dosyasını Finder'da Göster") {
+                    let logURL = logger.logFileURL
+                    NSWorkspace.shared.activateFileViewerSelecting([logURL])
+                }
+                .font(.caption)
+
+                Spacer()
+
+                Button("Tüm Veriyi Zorla Yenile") {
+                    Task {
+                        await viewModel.refreshAll()
+                    }
+                }
+                .font(.caption.bold())
+            }
+        }
+        .padding(16)
+        .frame(width: 580, height: 520)
+    }
+
+    private func colorForLevel(_ level: LogLevel) -> Color {
+        switch level {
+        case .debug: return .gray
+        case .info: return .white
+        case .warning: return .yellow
+        case .error: return .red
+        }
+    }
+
     // MARK: - Helpers
+    private func colorFromHex(_ hex: String) -> Color {
+        let cleanHex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: cleanHex).scanHexInt64(&int)
+        let r, g, b: UInt64
+        switch cleanHex.count {
+        case 6:
+            (r, g, b) = (int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (r, g, b) = (255, 0, 0)
+        }
+        return Color(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: 1
+        )
+    }
+
     private var headerColors: [Color] {
         switch form.selectedPlatform {
         case .youtube:
-            return [Color(red: 1.0, green: 0.1, blue: 0.1), Color(red: 0.8, green: 0.0, blue: 0.0)]
+            return [colorFromHex("#FF0000"), colorFromHex("#8B0000")]
         case .instagram:
-            return [Color(red: 0.88, green: 0.19, blue: 0.42), Color(red: 0.51, green: 0.15, blue: 0.82)]
+            return [colorFromHex("#833AB4"), colorFromHex("#FD1D1D"), colorFromHex("#FCB045")]
         case .tiktok:
-            return [Color(red: 0.0, green: 0.95, blue: 1.0), Color(red: 1.0, green: 0.0, blue: 0.3)]
+            return [colorFromHex("#00F2FE"), colorFromHex("#4FACFE")]
         }
     }
 
     private var inputPlaceholder: String {
         switch form.selectedPlatform {
-        case .youtube: return "Örn: @barisozcan veya kanal linki"
-        case .instagram: return "Örn: @instagram veya @barisozcan"
-        case .tiktok: return "Örn: @tiktok"
+        case .youtube: return "@RadioMocas veya kanal adı"
+        case .instagram: return "@uykusuztosba veya kullanıcı adı"
+        case .tiktok: return "@uykusuztosba veya kullanıcı adı"
         }
     }
 
     private var inputDescription: String {
         switch form.selectedPlatform {
-        case .youtube: return "YouTube kullanıcı adı (@kullanici), kanal URL veya ID girin."
-        case .instagram: return "Instagram kullanıcı adı (@kullanici) girin. Profil açık olmalıdır."
-        case .tiktok: return "TikTok kullanıcı adı (@kullanici) girin. Şifre gerekmez."
+        case .youtube:
+            return "YouTube kanal handle (@kanal) veya adını girin. Herhangi bir YouTube kanalı olabilir."
+        case .instagram:
+            return "Instagram kullanıcı adı (@kullanici) girin. Profilinizin herkese açık olması önerilir."
+        case .tiktok:
+            return "TikTok kullanıcı adı (@kullanici) girin. Şifre gerekmez."
         }
     }
 }
