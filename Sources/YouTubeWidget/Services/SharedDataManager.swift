@@ -81,6 +81,8 @@ public final class SharedDataManager: @unchecked Sendable {
         let userHome = FileManager.default.homeDirectoryForCurrentUser
         let chronoPlaceholders = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/SystemData/com.apple.chrono/placeholders", isDirectory: true)
         try? FileManager.default.removeItem(at: chronoPlaceholders)
+        let chronoTimelines = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/SystemData/com.apple.chrono/timelines", isDirectory: true)
+        try? FileManager.default.removeItem(at: chronoTimelines)
 
         // Notify WidgetKit
         WidgetCenter.shared.reloadAllTimelines()
