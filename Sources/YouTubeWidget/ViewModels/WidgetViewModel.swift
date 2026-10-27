@@ -1,6 +1,25 @@
 import SwiftUI
 import Combine
 
+public enum WidgetSize: String, CaseIterable, Codable, Sendable {
+    case small = "small"   // 175x175 square: channel name, avatar, subscriber count only
+    case medium = "medium" // 340x268 rectangular: subscriber count + latest short video
+
+    public var displayName: String {
+        switch self {
+        case .small: return "Küçük (Yalnızca Abone)"
+        case .medium: return "Orta (Abone + Son Shorts)"
+        }
+    }
+
+    public var dimensions: CGSize {
+        switch self {
+        case .small: return CGSize(width: 175, height: 175)
+        case .medium: return CGSize(width: 340, height: 268)
+        }
+    }
+}
+
 @MainActor
 public final class WidgetViewModel: ObservableObject {
     public static let shared = WidgetViewModel()
@@ -15,12 +34,14 @@ public final class WidgetViewModel: ObservableObject {
     @Published public var channelInput: String {
         didSet {
             UserDefaults.standard.set(channelInput, forKey: "YTWidget_ChannelInput")
+            syncToSharedData()
         }
     }
 
     @Published public var apiKey: String {
         didSet {
             UserDefaults.standard.set(apiKey, forKey: "YTWidget_ApiKey")
+            syncToSharedData()
         }
     }
 
@@ -52,6 +73,14 @@ public final class WidgetViewModel: ObservableObject {
         }
     }
 
+    @Published public var widgetSize: WidgetSize {
+        didSet {
+            UserDefaults.standard.set(widgetSize.rawValue, forKey: "YTWidget_Size")
+            DesktopWindowManager.shared.updateWindowSize(widgetSize)
+            syncToSharedData()
+        }
+    }
+
     @Published public var isLoading: Bool = false
     @Published public var lastErrorMessage: String? = nil
     @Published public var isSettingsOpen: Bool = false
@@ -71,6 +100,7 @@ public final class WidgetViewModel: ObservableObject {
         let savedOpacity = UserDefaults.standard.double(forKey: "YTWidget_Opacity")
         let hasSavedShowDesktop = UserDefaults.standard.object(forKey: "YTWidget_ShowDesktop") != nil
         let savedShowDesktop = hasSavedShowDesktop ? UserDefaults.standard.bool(forKey: "YTWidget_ShowDesktop") : true
+        let savedSizeStr = UserDefaults.standard.string(forKey: "YTWidget_Size") ?? "medium"
 
         self.channelInput = savedChannel
         self.apiKey = savedApiKey
@@ -78,6 +108,7 @@ public final class WidgetViewModel: ObservableObject {
         self.isAlwaysOnTop = savedOnTop
         self.widgetOpacity = savedOpacity > 0.2 ? savedOpacity : 0.95
         self.showDesktopWidget = savedShowDesktop
+        self.widgetSize = WidgetSize(rawValue: savedSizeStr) ?? .medium
 
         // Load cached stats
         if let data = UserDefaults.standard.data(forKey: "YTWidget_CachedStats"),
@@ -102,6 +133,9 @@ public final class WidgetViewModel: ObservableObject {
         // Start auto-refresh timer
         restartTimer()
 
+        // Sync initial state to SharedDataManager for WidgetKit
+        syncToSharedData()
+
         // If channel is configured, refresh immediately on launch
         if !savedChannel.isEmpty {
             Task {
@@ -111,6 +145,10 @@ public final class WidgetViewModel: ObservableObject {
     }
 
     // MARK: - Actions
+    public func toggleSize() {
+        widgetSize = (widgetSize == .small) ? .medium : .small
+    }
+
     public func refresh() async {
         let currentChannel = channelInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !currentChannel.isEmpty else {
@@ -129,6 +167,7 @@ public final class WidgetViewModel: ObservableObject {
             self.stats = newStats
             self.isLoading = false
             self.lastErrorMessage = nil
+            syncToSharedData()
         } catch {
             self.isLoading = false
             self.lastErrorMessage = error.localizedDescription
@@ -186,5 +225,15 @@ public final class WidgetViewModel: ObservableObject {
         if let data = try? JSONEncoder().encode(stats) {
             UserDefaults.standard.set(data, forKey: "YTWidget_CachedStats")
         }
+        syncToSharedData()
+    }
+
+    private func syncToSharedData() {
+        SharedDataManager.shared.save(
+            stats: stats,
+            channelInput: channelInput,
+            apiKey: apiKey.isEmpty ? nil : apiKey,
+            widgetSize: widgetSize.rawValue
+        )
     }
 }

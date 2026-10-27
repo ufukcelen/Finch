@@ -23,6 +23,9 @@ public struct WindowDragArea: NSViewRepresentable {
 
         override public func mouseDown(with event: NSEvent) {
             window?.performDrag(with: event)
+            DispatchQueue.main.async {
+                DesktopWindowManager.shared.snapWindowToGrid()
+            }
         }
 
         override public func resetCursorRects() {

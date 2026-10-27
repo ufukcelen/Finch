@@ -7,6 +7,7 @@ public final class SettingsState: ObservableObject {
     @Published public var selectedOpacity: Double = 0.95
     @Published public var selectedOnTop: Bool = false
     @Published public var selectedShowDesktop: Bool = true
+    @Published public var selectedSize: String = "medium"
     @Published public var isTesting: Bool = false
     @Published public var testResult: String? = nil
     @Published public var isSuccess: Bool = false
@@ -27,6 +28,7 @@ public struct SettingsView: View {
         s.selectedOpacity = viewModel.widgetOpacity
         s.selectedOnTop = viewModel.isAlwaysOnTop
         s.selectedShowDesktop = viewModel.showDesktopWidget
+        s.selectedSize = viewModel.widgetSize.rawValue
         self.state = s
     }
 
@@ -120,6 +122,19 @@ public struct SettingsView: View {
                         Label("Görünüm & Davranış", systemImage: "slider.horizontal.3")
                             .font(.system(size: 13, weight: .bold))
 
+                        // Widget Size Selector
+                        HStack {
+                            Text("Widget Boyutu:")
+                                .font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            Picker("", selection: $state.selectedSize) {
+                                Text("Küçük (Yalnızca Abone)").tag("small")
+                                Text("Orta (Abone + Son Shorts)").tag("medium")
+                            }
+                            .pickerStyle(.menu)
+                            .frame(width: 195)
+                        }
+
                         // Toggle Show Desktop Widget
                         Toggle(isOn: $state.selectedShowDesktop) {
                             VStack(alignment: .leading, spacing: 2) {
@@ -137,7 +152,7 @@ public struct SettingsView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Her Zaman En Üstte Tut")
                                     .font(.system(size: 12, weight: .medium))
-                                Text("Açık pencerelerin üzerinde kalsın (Kapalıyken masaüstü duvar kağıdına sabitlenir).")
+                                Text("Açık pencerelerin üzerinde kalsın (Kapalıyken pencerelerin arkasında kalır).")
                                     .font(.system(size: 10))
                                     .foregroundColor(.secondary)
                             }
@@ -172,6 +187,13 @@ public struct SettingsView: View {
                             .pickerStyle(.menu)
                             .frame(width: 130)
                         }
+
+                        // Desktop Snap Button
+                        Button("Masaüstü Kenarlarına Snap'le (Hizala)") {
+                            DesktopWindowManager.shared.snapWindowToGrid()
+                        }
+                        .buttonStyle(.link)
+                        .font(.system(size: 11))
                     }
                     .padding()
                     .background(
@@ -230,7 +252,7 @@ public struct SettingsView: View {
             .padding()
             .background(Color.primary.opacity(0.02))
         }
-        .frame(width: 440, height: 490)
+        .frame(width: 440, height: 530)
     }
 
     private func testChannelConnection() {
@@ -268,6 +290,7 @@ public struct SettingsView: View {
         viewModel.widgetOpacity = state.selectedOpacity
         viewModel.isAlwaysOnTop = state.selectedOnTop
         viewModel.showDesktopWidget = state.selectedShowDesktop
+        viewModel.widgetSize = WidgetSize(rawValue: state.selectedSize) ?? .medium
 
         Task {
             await viewModel.refresh()

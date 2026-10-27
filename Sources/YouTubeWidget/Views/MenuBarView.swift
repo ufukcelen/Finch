@@ -26,10 +26,27 @@ public struct MenuBarView: View {
 
             Divider()
 
-            // Desktop Widget Visibility Toggle
+            // Desktop Widget Visibility & Snap
             Button(viewModel.showDesktopWidget ? "Masaüstü Widget'ını Gizle" : "Masaüstü Widget'ını Göster") {
                 viewModel.showDesktopWidget.toggle()
             }
+
+            Button("Masaüstünde Hizala / Snaple") {
+                DesktopWindowManager.shared.snapWindowToGrid()
+            }
+
+            Divider()
+
+            // Widget Size Selection
+            Button(viewModel.widgetSize == .small ? "✓ Boyut: Küçük (Yalnızca Abone)" : "   Boyut: Küçük (Yalnızca Abone)") {
+                viewModel.widgetSize = .small
+            }
+
+            Button(viewModel.widgetSize == .medium ? "✓ Boyut: Orta (Abone + Son Shorts)" : "   Boyut: Orta (Abone + Son Shorts)") {
+                viewModel.widgetSize = .medium
+            }
+
+            Divider()
 
             // Quick Links
             Button("YouTube'da Kanalı Aç") {

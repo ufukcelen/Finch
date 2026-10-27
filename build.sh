@@ -8,8 +8,8 @@ echo "=========================================="
 echo "  🎬 YouTube macOS Widget Derleniyor...  "
 echo "=========================================="
 
-# 1. Swift derleme (Release modu)
-echo "📦 Swift paketi derleniyor (Release)..."
+# 1. Swift Ana Paket Derleme (Release)
+echo "📦 1. Ana uygulama derleniyor (Release)..."
 swift build -c release
 
 BIN_PATH="$DIR/.build/release/YouTubeWidget"
@@ -17,12 +17,14 @@ APP_DIR="$DIR/YouTubeWidget.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
+PLUGINS_DIR="$CONTENTS_DIR/PlugIns"
 
 # 2. .app paket yapısı oluşturma
-echo "🛠️  YouTubeWidget.app paketi hazırlanıyor..."
+echo "🛠️  2. YouTubeWidget.app yapısı hazırlanıyor..."
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR"
 mkdir -p "$RESOURCES_DIR"
+mkdir -p "$PLUGINS_DIR"
 
 # İkili dosyayı kopyala
 cp "$BIN_PATH" "$MACOS_DIR/YouTubeWidget"
@@ -35,7 +37,7 @@ if [ ! -f "$DIR/AppIcon.icns" ]; then
 fi
 cp "$DIR/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
 
-# 3. Info.plist oluşturma
+# 3. Ana Uygulama Info.plist
 cat << 'EOF' > "$CONTENTS_DIR/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -62,7 +64,7 @@ cat << 'EOF' > "$CONTENTS_DIR/Info.plist"
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
-    <string>13.0</string>
+    <string>14.0</string>
     <key>LSUIElement</key>
     <true/>
     <key>NSHighResolutionCapable</key>
@@ -76,22 +78,93 @@ cat << 'EOF' > "$CONTENTS_DIR/Info.plist"
 </plist>
 EOF
 
-# 4. Ad-hoc imzalama (macOS Gatekeeper uyumluluğu için)
-echo "🔏 Kod imzalanıyor..."
-codesign --force --deep --sign - "$APP_DIR" 2>/dev/null || true
+# 4. Yerel Apple WidgetKit Uzantısı (.appex) Derleme
+echo "🧩 3. macOS WidgetKit Uzantısı derleniyor (Small & Medium)..."
+EXTENSION_DIR="$PLUGINS_DIR/YouTubeWidgetExtension.appex"
+EXT_CONTENTS="$EXTENSION_DIR/Contents"
+EXT_MACOS="$EXT_CONTENTS/MacOS"
+mkdir -p "$EXT_MACOS"
 
-echo "✅ Tamamlandı! YouTubeWidget.app hazırlandı:"
-echo "   📍 $APP_DIR"
+swiftc -parse-as-library -O \
+    -framework WidgetKit \
+    -framework SwiftUI \
+    -framework AppKit \
+    -target arm64-apple-macos14.0 \
+    "$DIR/Sources/YouTubeWidgetExtension/YouTubeWidgetExtension.swift" \
+    -o "$EXT_MACOS/YouTubeWidgetExtension"
 
-# 5. Opsiyonel parametreler
-if [[ "$*" == *"--install"* ]]; then
-    echo "🚀 /Applications dizinine yükleniyor..."
-    rm -rf "/Applications/YouTubeWidget.app"
-    cp -R "$APP_DIR" /Applications/
-    echo "🎉 Başarıyla /Applications altına yüklendi!"
+chmod +x "$EXT_MACOS/YouTubeWidgetExtension"
+
+# WidgetKit Info.plist
+cat << 'EOF' > "$EXT_CONTENTS/Info.plist"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>tr</string>
+    <key>CFBundleDisplayName</key>
+    <string>YouTube Widget</string>
+    <key>CFBundleExecutable</key>
+    <string>YouTubeWidgetExtension</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.ufukcelen.youtubewidget.extension</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>YouTubeWidgetExtension</string>
+    <key>CFBundlePackageType</key>
+    <string>XPC!</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+    <key>NSExtension</key>
+    <dict>
+        <key>NSExtensionPointIdentifier</key>
+        <string>com.apple.widgetkit-extension</string>
+    </dict>
+</dict>
+</plist>
+EOF
+
+# 5. Ad-hoc Kod İmzalama (Doğru hiyerarşiyle: Extension -> Executable -> Bundle)
+echo "🔏 4. Kod imzalanıyor (Sandbox & Network yetkileri)..."
+codesign --force --sign - --entitlements "$DIR/scripts/extension.entitlements" "$EXTENSION_DIR" 2>/dev/null || true
+codesign --force --sign - --entitlements "$DIR/scripts/app.entitlements" "$MACOS_DIR/YouTubeWidget" 2>/dev/null || true
+codesign --force --sign - "$APP_DIR" 2>/dev/null || true
+
+# 6. /Applications dizinine senkronizasyon & LaunchServices kaydı
+LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+
+echo "🚀 5. /Applications dizinine yükleniyor..."
+rm -rf "/Applications/YouTubeWidget.app"
+cp -R "$APP_DIR" /Applications/
+
+# /Applications altındaki imzayı tazele ve kaydet
+codesign --force --sign - --entitlements "$DIR/scripts/extension.entitlements" "/Applications/YouTubeWidget.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
+codesign --force --sign - --entitlements "$DIR/scripts/app.entitlements" "/Applications/YouTubeWidget.app/Contents/MacOS/YouTubeWidget" 2>/dev/null || true
+codesign --force --sign - "/Applications/YouTubeWidget.app" 2>/dev/null || true
+
+# macOS LaunchServices ve WidgetKit servisini güncelle
+if [ -f "$LSREGISTER" ]; then
+    "$LSREGISTER" -f /Applications/YouTubeWidget.app 2>/dev/null || true
 fi
+pluginkit -a "/Applications/YouTubeWidget.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
+
+# chronod (macOS widget motoru) yenileniyor
+killall -9 chronod 2>/dev/null || true
+
+echo "=========================================="
+echo "✅ Tamamlandı! YouTubeWidget başarıyla kuruldu:"
+echo "   📍 /Applications/YouTubeWidget.app"
+echo "   🧩 WidgetKit Uzantısı: Aktif (Küçük & Orta)"
+echo "=========================================="
 
 if [[ "$*" == *"--run"* ]]; then
     echo "▶️  Uygulama başlatılıyor..."
-    open "$APP_DIR"
+    killall YouTubeWidget 2>/dev/null || true
+    open "/Applications/YouTubeWidget.app"
 fi
