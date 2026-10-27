@@ -3,7 +3,7 @@ import Foundation
 public final class SocialService: Sendable {
     public static let shared = SocialService()
 
-    private let socialUserAgent = "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.html)"
+    private let socialUserAgent = "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
 
     private init() {}
 

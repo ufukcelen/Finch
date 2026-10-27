@@ -1,33 +1,44 @@
-import SwiftUI
 import AppKit
+import Foundation
 
 @main
-struct YouTubeWidgetApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-
-    var body: some Scene {
-        Window("Sosyal Medya Widget Ayarları", id: "settings") {
-            SettingsView(viewModel: WidgetViewModel.shared)
-        }
-        .windowResizability(.contentSize)
-    }
-}
-
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    static func main() {
+        let app = NSApplication.shared
+        let delegate = AppDelegate()
+        app.delegate = delegate
+        app.run()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // App launches without any MenuBarExtra icon
+        // Prevent macOS from killing the app in background (LSUIElement mode)
+        ProcessInfo.processInfo.disableAutomaticTermination("Keep app alive for widget interactions")
+
+        // Open settings window on initial launch (from Spotlight, Finder, etc.)
+        Task { @MainActor in
+            DesktopWindowManager.shared.openSettingsWindow(slot: nil)
+        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
-        Task { @MainActor in
-            DesktopWindowManager.shared.openSettingsWindow()
+        for url in urls {
+            let slotParam = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?.first(where: { $0.name == "slot" })?.value
+            Task { @MainActor in
+                DesktopWindowManager.shared.openSettingsWindow(slot: slotParam)
+            }
         }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         Task { @MainActor in
-            DesktopWindowManager.shared.openSettingsWindow()
+            DesktopWindowManager.shared.openSettingsWindow(slot: nil)
         }
         return true
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // Keep running in background so clicking widget gear button responds instantly
+        return false
     }
 }

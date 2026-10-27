@@ -94,6 +94,24 @@ public struct SocialAccountStats: Codable, Sendable, Equatable {
         self.isConfigured = isConfigured
     }
 
+    public var validProfileURL: URL {
+        if let url = URL(string: profileURL), !profileURL.isEmpty {
+            return url
+        }
+        switch platform {
+        case .youtube: return URL(string: "https://www.youtube.com")!
+        case .instagram: return URL(string: "https://www.instagram.com")!
+        case .tiktok: return URL(string: "https://www.tiktok.com")!
+        }
+    }
+
+    public var validContentURL: URL {
+        if let c = contentURL, let url = URL(string: c), !c.isEmpty {
+            return url
+        }
+        return validProfileURL
+    }
+
     public static func defaultSample(for slotID: String, platform: SocialPlatform) -> SocialAccountStats {
         switch platform {
         case .youtube:
