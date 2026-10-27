@@ -4,8 +4,11 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DIR"
 
+export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
+
 echo "=========================================="
 echo "  🎬 YouTube macOS Widget v0.0.3 Derleniyor...  "
+echo "  🛠️  Xcode: $(xcodebuild -version | head -n 1)"
 echo "=========================================="
 
 # 1. Swift Ana Paket Derleme (Release)
@@ -94,68 +97,21 @@ cat << 'EOF' > "$CONTENTS_DIR/Info.plist"
 </plist>
 EOF
 
-# 4. Yerel Apple WidgetKit Uzantısı (.appex) Derleme
-echo "🧩 3. macOS WidgetKit Uzantısı derleniyor (Tekil Widget: YouTube & Sosyal Takip)..."
+# 4. Xcode Projesi & AppIntents Metadata ile Yerel WidgetKit Uzantısı (.appex) Derleme
+echo "🧩 3. macOS WidgetKit Uzantısı derleniyor (Xcode & AppIntents Metadata)..."
+python3 "$DIR/scripts/generate_project.py"
+
+xcodebuild -project "$DIR/YouTubeWidget.xcodeproj" \
+    -target YouTubeWidgetExtension \
+    -configuration Release \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ALLOWED=YES \
+    -quiet
+
 EXTENSION_DIR="$PLUGINS_DIR/YouTubeWidgetExtension.appex"
-EXT_CONTENTS="$EXTENSION_DIR/Contents"
-EXT_MACOS="$EXT_CONTENTS/MacOS"
-mkdir -p "$EXT_MACOS"
-
-swiftc -parse-as-library -O \
-    -framework WidgetKit \
-    -framework SwiftUI \
-    -framework AppIntents \
-    -framework AppKit \
-    -framework Foundation \
-    -target arm64-apple-macos14.0 \
-    -Xlinker -e -Xlinker _NSExtensionMain \
-    "$DIR/Sources/YouTubeWidget/Models/YouTubeStats.swift" \
-    "$DIR/Sources/YouTubeWidget/Models/SocialStats.swift" \
-    "$DIR/Sources/YouTubeWidget/Services/YouTubeService.swift" \
-    "$DIR/Sources/YouTubeWidget/Services/SocialService.swift" \
-    "$DIR/Sources/YouTubeWidgetExtension/YouTubeWidgetExtension.swift" \
-    -o "$EXT_MACOS/YouTubeWidgetExtension"
-
-chmod +x "$EXT_MACOS/YouTubeWidgetExtension"
-
-# WidgetKit Info.plist
-cat << 'EOF' > "$EXT_CONTENTS/Info.plist"
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>tr</string>
-    <key>CFBundleDisplayName</key>
-    <string>YouTube Widget</string>
-    <key>CFBundleExecutable</key>
-    <string>YouTubeWidgetExtension</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.ufukcelen.youtubewidget.extension</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>YouTubeWidgetExtension</string>
-    <key>CFBundlePackageType</key>
-    <string>XPC!</string>
-    <key>CFBundleShortVersionString</key>
-    <string>0.0.3</string>
-    <key>CFBundleSupportedPlatforms</key>
-    <array>
-        <string>MacOSX</string>
-    </array>
-    <key>CFBundleVersion</key>
-    <string>3</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>14.0</string>
-    <key>NSExtension</key>
-    <dict>
-        <key>NSExtensionPointIdentifier</key>
-        <string>com.apple.widgetkit-extension</string>
-    </dict>
-</dict>
-</plist>
-EOF
+rm -rf "$EXTENSION_DIR"
+cp -R "$DIR/build/Release/YouTubeWidgetExtension.appex" "$EXTENSION_DIR"
 
 # 5. Ad-hoc Kod İmzalama (Doğru hiyerarşiyle ve runtime options ile)
 echo "🔏 4. Kod imzalanıyor (App Sandbox & Runtime yetkileri)..."
@@ -189,6 +145,7 @@ echo "=========================================="
 echo "✅ Tamamlandı! YouTubeWidget v0.0.3 başarıyla kuruldu:"
 echo "   📍 /Applications/YouTubeWidget.app"
 echo "   🧩 WidgetKit Uzantısı: Aktif (Tekil Widget: YouTube & Sosyal Takip - Küçük & Orta)"
+echo "   ✨ AppIntents Metadata: Aktif (Sağ tıkla düzenleme & Bağımsız kanal/sıklık ayarı)"
 echo "=========================================="
 
 if [[ "$*" == *"--run"* ]]; then
