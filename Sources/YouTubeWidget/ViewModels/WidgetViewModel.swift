@@ -2,8 +2,8 @@ import SwiftUI
 import Combine
 
 public enum WidgetSize: String, CaseIterable, Codable, Sendable {
-    case small = "small"   // 175x175 square: channel name, avatar, subscriber count only
-    case medium = "medium" // 340x268 rectangular: subscriber count + latest short video
+    case small = "small"
+    case medium = "medium"
 
     public var displayName: String {
         switch self {
@@ -52,38 +52,22 @@ public final class WidgetViewModel: ObservableObject {
         }
     }
 
-    @Published public var isAlwaysOnTop: Bool {
+    @Published public var theme: String {
         didSet {
-            UserDefaults.standard.set(isAlwaysOnTop, forKey: "YTWidget_AlwaysOnTop")
-            DesktopWindowManager.shared.updateWindowLevel(isAlwaysOnTop: isAlwaysOnTop)
-        }
-    }
-
-    @Published public var widgetOpacity: Double {
-        didSet {
-            UserDefaults.standard.set(widgetOpacity, forKey: "YTWidget_Opacity")
-            DesktopWindowManager.shared.updateWindowOpacity(widgetOpacity)
-        }
-    }
-
-    @Published public var showDesktopWidget: Bool {
-        didSet {
-            UserDefaults.standard.set(showDesktopWidget, forKey: "YTWidget_ShowDesktop")
-            DesktopWindowManager.shared.setWindowVisibility(showDesktopWidget)
+            UserDefaults.standard.set(theme, forKey: "YTWidget_Theme")
+            syncToSharedData()
         }
     }
 
     @Published public var widgetSize: WidgetSize {
         didSet {
             UserDefaults.standard.set(widgetSize.rawValue, forKey: "YTWidget_Size")
-            DesktopWindowManager.shared.updateWindowSize(widgetSize)
             syncToSharedData()
         }
     }
 
     @Published public var isLoading: Bool = false
     @Published public var lastErrorMessage: String? = nil
-    @Published public var isSettingsOpen: Bool = false
     @Published public var isShortHovered: Bool = false
     @Published public var isSpinning: Bool = false
 
@@ -95,27 +79,20 @@ public final class WidgetViewModel: ObservableObject {
         let savedChannel = UserDefaults.standard.string(forKey: "YTWidget_ChannelInput") ?? ""
         let savedApiKey = UserDefaults.standard.string(forKey: "YTWidget_ApiKey") ?? ""
         let savedInterval = UserDefaults.standard.integer(forKey: "YTWidget_RefreshInterval")
-        let hasSavedOnTop = UserDefaults.standard.object(forKey: "YTWidget_AlwaysOnTop") != nil
-        let savedOnTop = hasSavedOnTop ? UserDefaults.standard.bool(forKey: "YTWidget_AlwaysOnTop") : true
-        let savedOpacity = UserDefaults.standard.double(forKey: "YTWidget_Opacity")
-        let hasSavedShowDesktop = UserDefaults.standard.object(forKey: "YTWidget_ShowDesktop") != nil
-        let savedShowDesktop = hasSavedShowDesktop ? UserDefaults.standard.bool(forKey: "YTWidget_ShowDesktop") : true
         let savedSizeStr = UserDefaults.standard.string(forKey: "YTWidget_Size") ?? "medium"
+        let savedTheme = UserDefaults.standard.string(forKey: "YTWidget_Theme") ?? "red"
 
         self.channelInput = savedChannel
         self.apiKey = savedApiKey
         self.refreshIntervalMinutes = savedInterval > 0 ? savedInterval : 15
-        self.isAlwaysOnTop = savedOnTop
-        self.widgetOpacity = savedOpacity > 0.2 ? savedOpacity : 0.95
-        self.showDesktopWidget = savedShowDesktop
         self.widgetSize = WidgetSize(rawValue: savedSizeStr) ?? .medium
+        self.theme = savedTheme
 
         // Load cached stats
         if let data = UserDefaults.standard.data(forKey: "YTWidget_CachedStats"),
            let cached = try? JSONDecoder().decode(YouTubeStats.self, from: data) {
             self.stats = cached
         } else {
-            // Default sample preview
             self.stats = YouTubeStats(
                 channelTitle: "YouTube Widget",
                 handle: "@kanal_ayarla",
@@ -228,12 +205,12 @@ public final class WidgetViewModel: ObservableObject {
         syncToSharedData()
     }
 
-    private func syncToSharedData() {
+    public func syncToSharedData() {
         SharedDataManager.shared.save(
             stats: stats,
             channelInput: channelInput,
             apiKey: apiKey.isEmpty ? nil : apiKey,
-            widgetSize: widgetSize.rawValue
+            theme: theme
         )
     }
 }

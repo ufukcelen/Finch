@@ -4,10 +4,7 @@ public final class SettingsState: ObservableObject {
     @Published public var inputChannel: String = ""
     @Published public var inputApiKey: String = ""
     @Published public var selectedInterval: Int = 15
-    @Published public var selectedOpacity: Double = 0.95
-    @Published public var selectedOnTop: Bool = false
-    @Published public var selectedShowDesktop: Bool = true
-    @Published public var selectedSize: String = "medium"
+    @Published public var selectedTheme: String = "red"
     @Published public var isTesting: Bool = false
     @Published public var testResult: String? = nil
     @Published public var isSuccess: Bool = false
@@ -25,10 +22,7 @@ public struct SettingsView: View {
         s.inputChannel = viewModel.channelInput
         s.inputApiKey = viewModel.apiKey
         s.selectedInterval = viewModel.refreshIntervalMinutes
-        s.selectedOpacity = viewModel.widgetOpacity
-        s.selectedOnTop = viewModel.isAlwaysOnTop
-        s.selectedShowDesktop = viewModel.showDesktopWidget
-        s.selectedSize = viewModel.widgetSize.rawValue
+        s.selectedTheme = viewModel.theme
         self.state = s
     }
 
@@ -45,17 +39,17 @@ public struct SettingsView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 40, height: 40)
+                        .frame(width: 38, height: 38)
 
                     Image(systemName: "play.rectangle.fill")
-                        .font(.system(size: 20))
+                        .font(.system(size: 18))
                         .foregroundColor(.white)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("YouTube Widget Ayarları")
                         .font(.headline)
-                    Text("Kanalınızı bağlayın ve widget görünümünü özelleştirin.")
+                    Text("İstediğiniz YouTube kanalını bağlayın ve temayı seçin.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -68,7 +62,7 @@ public struct SettingsView: View {
             Divider()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 16) {
                     // MARK: - Section 1: Channel
                     VStack(alignment: .leading, spacing: 8) {
                         Label("YouTube Kanalınız", systemImage: "person.crop.square.filled.and.at.rectangle")
@@ -76,7 +70,7 @@ public struct SettingsView: View {
 
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
-                                TextField("Örn: @kanal_adiniz veya youtube.com/@kanal", text: $state.inputChannel)
+                                TextField("Örn: @UykusuzTosba veya @barisozcan", text: $state.inputChannel)
                                     .textFieldStyle(.roundedBorder)
 
                                 Button {
@@ -94,7 +88,7 @@ public struct SettingsView: View {
                                 .disabled(state.inputChannel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.isTesting)
                             }
 
-                            Text("Kanal kullanıcı adınızı (@kullanici), kanal bağlantınızı veya Kanal ID'nizi girebilirsiniz.")
+                            Text("Kanal kullanıcı adınızı (@kullanici), kanal URL bağlantınızı veya Kanal ID'nizi yazabilirsiniz.")
                                 .font(.system(size: 10))
                                 .foregroundColor(.secondary)
                         }
@@ -117,60 +111,24 @@ public struct SettingsView: View {
                             .fill(Color.primary.opacity(0.03))
                     )
 
-                    // MARK: - Section 2: Display & Behavior
-                    VStack(alignment: .leading, spacing: 14) {
-                        Label("Görünüm & Davranış", systemImage: "slider.horizontal.3")
+                    // MARK: - Section 2: Widget Theme & Customization
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Widget Teması & Görünüm", systemImage: "paintbrush.fill")
                             .font(.system(size: 13, weight: .bold))
 
-                        // Widget Size Selector
+                        // Theme Selector
                         HStack {
-                            Text("Widget Boyutu:")
+                            Text("Widget Teması:")
                                 .font(.system(size: 12, weight: .medium))
                             Spacer()
-                            Picker("", selection: $state.selectedSize) {
-                                Text("Küçük (Yalnızca Abone)").tag("small")
-                                Text("Orta (Abone + Son Shorts)").tag("medium")
+                            Picker("", selection: $state.selectedTheme) {
+                                Text("🔴 YouTube Kırmızısı").tag("red")
+                                Text("⬛️ Koyu Titanyum").tag("dark")
+                                Text("🪟 Buzlu Cam (Şeffaf)").tag("glass")
+                                Text("🟣 Siber Mor Neon").tag("neon")
                             }
                             .pickerStyle(.menu)
-                            .frame(width: 195)
-                        }
-
-                        // Toggle Show Desktop Widget
-                        Toggle(isOn: $state.selectedShowDesktop) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Masaüstü Widget'ını Göster")
-                                    .font(.system(size: 12, weight: .medium))
-                                Text("Widget masaüstünüzde şeffaf bir kart olarak görünür.")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .toggleStyle(.switch)
-
-                        // Toggle Always on top vs Desktop pinned
-                        Toggle(isOn: $state.selectedOnTop) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Her Zaman En Üstte Tut")
-                                    .font(.system(size: 12, weight: .medium))
-                                Text("Açık pencerelerin üzerinde kalsın (Kapalıyken pencerelerin arkasında kalır).")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .toggleStyle(.switch)
-
-                        // Opacity Slider
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text("Widget Saydamlığı:")
-                                    .font(.system(size: 12, weight: .medium))
-                                Spacer()
-                                Text("%\(Int(state.selectedOpacity * 100))")
-                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
-                                    .foregroundColor(.secondary)
-                            }
-
-                            Slider(value: $state.selectedOpacity, in: 0.4...1.0, step: 0.05)
+                            .frame(width: 200)
                         }
 
                         // Refresh Interval Picker
@@ -179,21 +137,14 @@ public struct SettingsView: View {
                                 .font(.system(size: 12, weight: .medium))
                             Spacer()
                             Picker("", selection: $state.selectedInterval) {
-                                Text("5 Dakika").tag(5)
                                 Text("15 Dakika").tag(15)
                                 Text("30 Dakika").tag(30)
                                 Text("1 Saat").tag(60)
+                                Text("3 Saat").tag(180)
                             }
                             .pickerStyle(.menu)
-                            .frame(width: 130)
+                            .frame(width: 140)
                         }
-
-                        // Desktop Snap Button
-                        Button("Masaüstü Kenarlarına Snap'le (Hizala)") {
-                            DesktopWindowManager.shared.snapWindowToGrid()
-                        }
-                        .buttonStyle(.link)
-                        .font(.system(size: 11))
                     }
                     .padding()
                     .background(
@@ -207,7 +158,7 @@ public struct SettingsView: View {
                             TextField("AIzaSy...", text: $state.inputApiKey)
                                 .textFieldStyle(.roundedBorder)
 
-                            Text("Varsayılan olarak widget API anahtarına ihtiyaç DUYMADAN çalışır. İsteğe bağlı olarak kendi Google Cloud YouTube Data API v3 anahtarınızı da kullanabilirsiniz.")
+                            Text("Varsayılan olarak widget API anahtarına ihtiyaç DUYMADAN çalışır. İsteğe bağlı olarak kendi YouTube Data API v3 anahtarınızı da girebilirsiniz.")
                                 .font(.system(size: 10))
                                 .foregroundColor(.secondary)
                         }
@@ -229,7 +180,7 @@ public struct SettingsView: View {
 
             // Footer actions
             HStack {
-                Button("Örnek Kanalı Dene (@barisozcan)") {
+                Button("Örnek (@barisozcan)") {
                     state.inputChannel = "@barisozcan"
                     testChannelConnection()
                 }
@@ -252,7 +203,7 @@ public struct SettingsView: View {
             .padding()
             .background(Color.primary.opacity(0.02))
         }
-        .frame(width: 440, height: 530)
+        .frame(width: 460, height: 490)
     }
 
     private func testChannelConnection() {
@@ -271,7 +222,7 @@ public struct SettingsView: View {
                 await MainActor.run {
                     self.state.isTesting = false
                     self.state.isSuccess = true
-                    self.state.testResult = "Bağlandı! '\(stats.channelTitle)' (\(stats.subscriberCount)) - Son Shorts: '\(stats.latestShortTitle)' (\(stats.latestShortViews))"
+                    self.state.testResult = "Bağlandı: '\(stats.channelTitle)' (\(stats.subscriberCount)) - Shorts: '\(stats.latestShortTitle)'"
                 }
             } catch {
                 await MainActor.run {
@@ -287,10 +238,7 @@ public struct SettingsView: View {
         viewModel.channelInput = state.inputChannel.trimmingCharacters(in: .whitespacesAndNewlines)
         viewModel.apiKey = state.inputApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         viewModel.refreshIntervalMinutes = state.selectedInterval
-        viewModel.widgetOpacity = state.selectedOpacity
-        viewModel.isAlwaysOnTop = state.selectedOnTop
-        viewModel.showDesktopWidget = state.selectedShowDesktop
-        viewModel.widgetSize = WidgetSize(rawValue: state.selectedSize) ?? .medium
+        viewModel.theme = state.selectedTheme
 
         Task {
             await viewModel.refresh()

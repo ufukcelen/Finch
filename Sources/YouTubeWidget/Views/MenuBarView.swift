@@ -9,41 +9,20 @@ public struct MenuBarView: View {
 
     public var body: some View {
         VStack {
-            // Channel Info
+            // Channel Info Header
             if viewModel.stats.isConfigured {
                 Text("\(viewModel.stats.channelTitle) (\(viewModel.stats.handle))")
                     .font(.headline)
-                
+
                 Text("👥 Abone Sayısı: \(viewModel.stats.subscriberCount)")
-                
+
                 if !viewModel.stats.latestShortTitle.isEmpty {
                     Text("🎬 Son Shorts: \(viewModel.stats.latestShortTitle)")
                     Text("🔥 İzlenme: \(viewModel.stats.latestShortViews)")
                 }
             } else {
-                Text("YouTube Widget (Henüz Kanal Girilmedi)")
-            }
-
-            Divider()
-
-            // Desktop Widget Visibility & Snap
-            Button(viewModel.showDesktopWidget ? "Masaüstü Widget'ını Gizle" : "Masaüstü Widget'ını Göster") {
-                viewModel.showDesktopWidget.toggle()
-            }
-
-            Button("Masaüstünde Hizala / Snaple") {
-                DesktopWindowManager.shared.snapWindowToGrid()
-            }
-
-            Divider()
-
-            // Widget Size Selection
-            Button(viewModel.widgetSize == .small ? "✓ Boyut: Küçük (Yalnızca Abone)" : "   Boyut: Küçük (Yalnızca Abone)") {
-                viewModel.widgetSize = .small
-            }
-
-            Button(viewModel.widgetSize == .medium ? "✓ Boyut: Orta (Abone + Son Shorts)" : "   Boyut: Orta (Abone + Son Shorts)") {
-                viewModel.widgetSize = .medium
+                Text("YouTube Widget (Kanal Ayarlanmadı)")
+                    .font(.headline)
             }
 
             Divider()
@@ -68,7 +47,7 @@ public struct MenuBarView: View {
                 }
             }
 
-            Button("Ayarlar...") {
+            Button("Ayarlar & Kanal Değiştir...") {
                 DesktopWindowManager.shared.openSettingsWindow()
             }
             .keyboardShortcut(",", modifiers: .command)

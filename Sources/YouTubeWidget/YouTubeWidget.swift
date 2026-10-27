@@ -33,14 +33,10 @@ struct YouTubeWidgetApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Set accessory activation policy so app lives cleanly in menu bar and desktop without dock clutter
         NSApp.setActivationPolicy(.accessory)
 
-        // Initialize Desktop Widget
+        // Open settings on first run if no channel configured yet
         Task { @MainActor in
-            DesktopWindowManager.shared.setupDesktopWidget()
-
-            // Open settings on first run if no channel configured yet
             if WidgetViewModel.shared.channelInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 DesktopWindowManager.shared.openSettingsWindow()
             }
