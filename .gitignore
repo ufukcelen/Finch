@@ -9,3 +9,4 @@ DerivedData/
 YouTubeWidget.app/
 build/
 *.icns.tmp
+releases/
