@@ -376,7 +376,7 @@ def create_project(base_dir):
 \t\t\t\tCODE_SIGN_STYLE = Manual;
 \t\t\t\tCODE_SIGN_IDENTITY = \"-\";
 \t\t\t\tCOMBINE_HIDPI_IMAGES = YES;
-\t\t\t\tCURRENT_PROJECT_VERSION = 6;
+\t\t\t\tCURRENT_PROJECT_VERSION = 7;
 \t\t\t\tGENERATE_INFOPLIST_FILE = NO;
 \t\t\t\tINFOPLIST_FILE = \"YouTubeWidget.app/Contents/Info.plist\";
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = \"scripts/app.entitlements\";
@@ -384,7 +384,7 @@ def create_project(base_dir):
 \t\t\t\t\t\"$(inherited)\",
 \t\t\t\t\t\"@executable_path/../Frameworks\",
 \t\t\t\t);
-\t\t\t\tMARKETING_VERSION = 0.0.6;
+\t\t\t\tMARKETING_VERSION = 0.0.7;
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.youtubewidget;
 \t\t\t\tPRODUCT_NAME = YouTubeWidget;
 \t\t\t\tSWIFT_VERSION = 5.0;
@@ -397,7 +397,7 @@ def create_project(base_dir):
 \t\t\t\tCODE_SIGN_STYLE = Manual;
 \t\t\t\tCODE_SIGN_IDENTITY = \"-\";
 \t\t\t\tCOMBINE_HIDPI_IMAGES = YES;
-\t\t\t\tCURRENT_PROJECT_VERSION = 6;
+\t\t\t\tCURRENT_PROJECT_VERSION = 7;
 \t\t\t\tGENERATE_INFOPLIST_FILE = NO;
 \t\t\t\tINFOPLIST_FILE = \"YouTubeWidget.app/Contents/Info.plist\";
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = \"scripts/app.entitlements\";
@@ -405,7 +405,7 @@ def create_project(base_dir):
 \t\t\t\t\t\"$(inherited)\",
 \t\t\t\t\t\"@executable_path/../Frameworks\",
 \t\t\t\t);
-\t\t\t\tMARKETING_VERSION = 0.0.6;
+\t\t\t\tMARKETING_VERSION = 0.0.7;
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.youtubewidget;
 \t\t\t\tPRODUCT_NAME = YouTubeWidget;
 \t\t\t\tSWIFT_VERSION = 5.0;
@@ -417,7 +417,7 @@ def create_project(base_dir):
 \t\t\tbuildSettings = {{
 \t\t\t\tCODE_SIGN_STYLE = Manual;
 \t\t\t\tCODE_SIGN_IDENTITY = \"-\";
-\t\t\t\tCURRENT_PROJECT_VERSION = 6;
+\t\t\t\tCURRENT_PROJECT_VERSION = 7;
 \t\t\t\tGENERATE_INFOPLIST_FILE = NO;
 \t\t\t\tINFOPLIST_FILE = \"scripts/extension-Info.plist\";
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = \"scripts/extension.entitlements\";
@@ -426,7 +426,7 @@ def create_project(base_dir):
 \t\t\t\t\t\"@executable_path/../Frameworks\",
 \t\t\t\t\t\"@executable_path/../../../../Frameworks\",
 \t\t\t\t);
-\t\t\t\tMARKETING_VERSION = 0.0.6;
+\t\t\t\tMARKETING_VERSION = 0.0.7;
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.youtubewidget.extension;
 \t\t\t\tPRODUCT_NAME = YouTubeWidgetExtension;
 \t\t\t\tSWIFT_VERSION = 5.0;
@@ -438,7 +438,7 @@ def create_project(base_dir):
 \t\t\tbuildSettings = {{
 \t\t\t\tCODE_SIGN_STYLE = Manual;
 \t\t\t\tCODE_SIGN_IDENTITY = \"-\";
-\t\t\t\tCURRENT_PROJECT_VERSION = 6;
+\t\t\t\tCURRENT_PROJECT_VERSION = 7;
 \t\t\t\tGENERATE_INFOPLIST_FILE = NO;
 \t\t\t\tINFOPLIST_FILE = \"scripts/extension-Info.plist\";
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = \"scripts/extension.entitlements\";
@@ -447,7 +447,7 @@ def create_project(base_dir):
 \t\t\t\t\t\"@executable_path/../Frameworks\",
 \t\t\t\t\t\"@executable_path/../../../../Frameworks\",
 \t\t\t\t);
-\t\t\t\tMARKETING_VERSION = 0.0.6;
+\t\t\t\tMARKETING_VERSION = 0.0.7;
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.youtubewidget.extension;
 \t\t\t\tPRODUCT_NAME = YouTubeWidgetExtension;
 \t\t\t\tSWIFT_VERSION = 5.0;

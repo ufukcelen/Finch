@@ -173,7 +173,7 @@ public struct SettingsView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
 
-                Text("v0.0.6")
+                Text("v0.0.7")
                     .font(.caption2.bold())
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)

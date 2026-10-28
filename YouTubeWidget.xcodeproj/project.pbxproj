@@ -8,22 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		000100000000000000000082 /* YouTubeWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 000100000000000000000011 /* YouTubeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		DE272278F33848FAAFEEA4B1 /* YouTubeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E9553B250D94D9099FD9D9B /* YouTubeWidget.swift */; };
-		6A1B3C1723DB446C965F8D7B /* WidgetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B46BD20EBF0246D7B47E43EA /* WidgetViewModel.swift */; };
-		3E1F0ACD007D47D7856D96EC /* DesktopWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84BF21B93677440F9B148167 /* DesktopWindowManager.swift */; };
-		D9F75F80FA8D49B88FBE813B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5B9E926EC840A188BB62B9 /* SettingsView.swift */; };
-		5502D3D898E44C089EE0BD80 /* SharedDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F83A849600CF434580DABE13 /* SharedDataManager.swift */; };
-		BE3BB0F01A4947EA9A9D92CB /* YouTubeStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 430EC6A6FDEE40D4B1D29E05 /* YouTubeStats.swift */; };
-		E8FE0C4BDCC84A4FA909720F /* SocialStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EE8810CE48F4EF19646A889 /* SocialStats.swift */; };
-		0B7F91CF51E44C3EA22354E4 /* YouTubeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9295A46B9A484230B0214678 /* YouTubeService.swift */; };
-		6479052C7B1F4BC48EC8448D /* SocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04C14BAD47C4DCD9EFD9277 /* SocialService.swift */; };
-		C1503A1C84864D82AB685957 /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E83B5378DA38474098C6976E /* DebugLogger.swift */; };
-		B6A39013E1594B0A9111E345 /* YouTubeWidgetExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBEBFE1E72A641C88F1C2900 /* YouTubeWidgetExtension.swift */; };
-		E6F908EB174A4535AC7B7493 /* YouTubeStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 430EC6A6FDEE40D4B1D29E05 /* YouTubeStats.swift */; };
-		767B96F21DF04638BE165B68 /* SocialStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EE8810CE48F4EF19646A889 /* SocialStats.swift */; };
-		DCA7B19287CC45A38EE2512B /* YouTubeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9295A46B9A484230B0214678 /* YouTubeService.swift */; };
-		62E15924E73D42D897176618 /* SocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04C14BAD47C4DCD9EFD9277 /* SocialService.swift */; };
-		2739EDB4B1ED4E90A5290D57 /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E83B5378DA38474098C6976E /* DebugLogger.swift */; };
+		92923A8B36134F2DA7088028 /* YouTubeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0BF68E14E934059BA8576E3 /* YouTubeWidget.swift */; };
+		7461F7199F794BDCA7C83347 /* WidgetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B2A6BE3310D4314939E589F /* WidgetViewModel.swift */; };
+		109FC80493D24CD085E5F268 /* DesktopWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D18F4C044A4D98AD6C034E /* DesktopWindowManager.swift */; };
+		56A65E3650F24DC9B2FABB6B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAF32CB66F854ADA8FE58B04 /* SettingsView.swift */; };
+		D8251E98CD1841C5BBB24508 /* SharedDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12AC3C6D892F4ADBADBB6A7D /* SharedDataManager.swift */; };
+		13AAC92291E040E0A83AE8C1 /* YouTubeStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22608BE08B9417F97649022 /* YouTubeStats.swift */; };
+		9D7362778B50470CB1FE62DA /* SocialStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = D04E66750B39489093679440 /* SocialStats.swift */; };
+		D4E8224707EB4957BD3199A0 /* YouTubeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC877BC281954EC8B9E58CD9 /* YouTubeService.swift */; };
+		159700ABD23F4EA3AF80DFD1 /* SocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AA060B8766742339C6FAFD7 /* SocialService.swift */; };
+		1A359F6B026D4E18970F1F1D /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12DC832E71D4B008E8B8613 /* DebugLogger.swift */; };
+		0AE20767CEC84D85A0BFD2E3 /* YouTubeWidgetExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E25D72470AB424AA6B0FEB3 /* YouTubeWidgetExtension.swift */; };
+		715D056BFA024BD8944B8280 /* YouTubeStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22608BE08B9417F97649022 /* YouTubeStats.swift */; };
+		D8911F55FB8B41E98B64A0F2 /* SocialStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = D04E66750B39489093679440 /* SocialStats.swift */; };
+		364783B9EBEF4695AB36FAA5 /* YouTubeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC877BC281954EC8B9E58CD9 /* YouTubeService.swift */; };
+		785AA002B662440FA0909377 /* SocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AA060B8766742339C6FAFD7 /* SocialService.swift */; };
+		763C3E216EAC4982BF68C6F4 /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12DC832E71D4B008E8B8613 /* DebugLogger.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,17 +53,17 @@
 /* Begin PBXFileReference section */
 		000100000000000000000010 /* YouTubeWidget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YouTubeWidget.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		000100000000000000000011 /* YouTubeWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YouTubeWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		0E9553B250D94D9099FD9D9B /* YouTubeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/YouTubeWidget.swift"; sourceTree = "<group>"; };
-		B46BD20EBF0246D7B47E43EA /* WidgetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/ViewModels/WidgetViewModel.swift"; sourceTree = "<group>"; };
-		84BF21B93677440F9B148167 /* DesktopWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Windows/DesktopWindowManager.swift"; sourceTree = "<group>"; };
-		AE5B9E926EC840A188BB62B9 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Views/SettingsView.swift"; sourceTree = "<group>"; };
-		F83A849600CF434580DABE13 /* SharedDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/SharedDataManager.swift"; sourceTree = "<group>"; };
-		430EC6A6FDEE40D4B1D29E05 /* YouTubeStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Models/YouTubeStats.swift"; sourceTree = "<group>"; };
-		2EE8810CE48F4EF19646A889 /* SocialStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Models/SocialStats.swift"; sourceTree = "<group>"; };
-		9295A46B9A484230B0214678 /* YouTubeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/YouTubeService.swift"; sourceTree = "<group>"; };
-		F04C14BAD47C4DCD9EFD9277 /* SocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/SocialService.swift"; sourceTree = "<group>"; };
-		E83B5378DA38474098C6976E /* DebugLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/DebugLogger.swift"; sourceTree = "<group>"; };
-		FBEBFE1E72A641C88F1C2900 /* YouTubeWidgetExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidgetExtension/YouTubeWidgetExtension.swift"; sourceTree = "<group>"; };
+		C0BF68E14E934059BA8576E3 /* YouTubeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/YouTubeWidget.swift"; sourceTree = "<group>"; };
+		6B2A6BE3310D4314939E589F /* WidgetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/ViewModels/WidgetViewModel.swift"; sourceTree = "<group>"; };
+		04D18F4C044A4D98AD6C034E /* DesktopWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Windows/DesktopWindowManager.swift"; sourceTree = "<group>"; };
+		EAF32CB66F854ADA8FE58B04 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Views/SettingsView.swift"; sourceTree = "<group>"; };
+		12AC3C6D892F4ADBADBB6A7D /* SharedDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/SharedDataManager.swift"; sourceTree = "<group>"; };
+		A22608BE08B9417F97649022 /* YouTubeStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Models/YouTubeStats.swift"; sourceTree = "<group>"; };
+		D04E66750B39489093679440 /* SocialStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Models/SocialStats.swift"; sourceTree = "<group>"; };
+		BC877BC281954EC8B9E58CD9 /* YouTubeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/YouTubeService.swift"; sourceTree = "<group>"; };
+		8AA060B8766742339C6FAFD7 /* SocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/SocialService.swift"; sourceTree = "<group>"; };
+		C12DC832E71D4B008E8B8613 /* DebugLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/DebugLogger.swift"; sourceTree = "<group>"; };
+		3E25D72470AB424AA6B0FEB3 /* YouTubeWidgetExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidgetExtension/YouTubeWidgetExtension.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,17 +104,17 @@
 		000100000000000000000004 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				0E9553B250D94D9099FD9D9B /* YouTubeWidget.swift */,
-				B46BD20EBF0246D7B47E43EA /* WidgetViewModel.swift */,
-				84BF21B93677440F9B148167 /* DesktopWindowManager.swift */,
-				AE5B9E926EC840A188BB62B9 /* SettingsView.swift */,
-				F83A849600CF434580DABE13 /* SharedDataManager.swift */,
-				430EC6A6FDEE40D4B1D29E05 /* YouTubeStats.swift */,
-				2EE8810CE48F4EF19646A889 /* SocialStats.swift */,
-				9295A46B9A484230B0214678 /* YouTubeService.swift */,
-				F04C14BAD47C4DCD9EFD9277 /* SocialService.swift */,
-				E83B5378DA38474098C6976E /* DebugLogger.swift */,
-				FBEBFE1E72A641C88F1C2900 /* YouTubeWidgetExtension.swift */,
+				C0BF68E14E934059BA8576E3 /* YouTubeWidget.swift */,
+				6B2A6BE3310D4314939E589F /* WidgetViewModel.swift */,
+				04D18F4C044A4D98AD6C034E /* DesktopWindowManager.swift */,
+				EAF32CB66F854ADA8FE58B04 /* SettingsView.swift */,
+				12AC3C6D892F4ADBADBB6A7D /* SharedDataManager.swift */,
+				A22608BE08B9417F97649022 /* YouTubeStats.swift */,
+				D04E66750B39489093679440 /* SocialStats.swift */,
+				BC877BC281954EC8B9E58CD9 /* YouTubeService.swift */,
+				8AA060B8766742339C6FAFD7 /* SocialService.swift */,
+				C12DC832E71D4B008E8B8613 /* DebugLogger.swift */,
+				3E25D72470AB424AA6B0FEB3 /* YouTubeWidgetExtension.swift */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -217,16 +217,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DE272278F33848FAAFEEA4B1 /* YouTubeWidget.swift in Sources */,
-				6A1B3C1723DB446C965F8D7B /* WidgetViewModel.swift in Sources */,
-				3E1F0ACD007D47D7856D96EC /* DesktopWindowManager.swift in Sources */,
-				D9F75F80FA8D49B88FBE813B /* SettingsView.swift in Sources */,
-				5502D3D898E44C089EE0BD80 /* SharedDataManager.swift in Sources */,
-				BE3BB0F01A4947EA9A9D92CB /* YouTubeStats.swift in Sources */,
-				E8FE0C4BDCC84A4FA909720F /* SocialStats.swift in Sources */,
-				0B7F91CF51E44C3EA22354E4 /* YouTubeService.swift in Sources */,
-				6479052C7B1F4BC48EC8448D /* SocialService.swift in Sources */,
-				C1503A1C84864D82AB685957 /* DebugLogger.swift in Sources */,
+				92923A8B36134F2DA7088028 /* YouTubeWidget.swift in Sources */,
+				7461F7199F794BDCA7C83347 /* WidgetViewModel.swift in Sources */,
+				109FC80493D24CD085E5F268 /* DesktopWindowManager.swift in Sources */,
+				56A65E3650F24DC9B2FABB6B /* SettingsView.swift in Sources */,
+				D8251E98CD1841C5BBB24508 /* SharedDataManager.swift in Sources */,
+				13AAC92291E040E0A83AE8C1 /* YouTubeStats.swift in Sources */,
+				9D7362778B50470CB1FE62DA /* SocialStats.swift in Sources */,
+				D4E8224707EB4957BD3199A0 /* YouTubeService.swift in Sources */,
+				159700ABD23F4EA3AF80DFD1 /* SocialService.swift in Sources */,
+				1A359F6B026D4E18970F1F1D /* DebugLogger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -234,12 +234,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B6A39013E1594B0A9111E345 /* YouTubeWidgetExtension.swift in Sources */,
-				E6F908EB174A4535AC7B7493 /* YouTubeStats.swift in Sources */,
-				767B96F21DF04638BE165B68 /* SocialStats.swift in Sources */,
-				DCA7B19287CC45A38EE2512B /* YouTubeService.swift in Sources */,
-				62E15924E73D42D897176618 /* SocialService.swift in Sources */,
-				2739EDB4B1ED4E90A5290D57 /* DebugLogger.swift in Sources */,
+				0AE20767CEC84D85A0BFD2E3 /* YouTubeWidgetExtension.swift in Sources */,
+				715D056BFA024BD8944B8280 /* YouTubeStats.swift in Sources */,
+				D8911F55FB8B41E98B64A0F2 /* SocialStats.swift in Sources */,
+				364783B9EBEF4695AB36FAA5 /* YouTubeService.swift in Sources */,
+				785AA002B662440FA0909377 /* SocialService.swift in Sources */,
+				763C3E216EAC4982BF68C6F4 /* DebugLogger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -303,7 +303,7 @@
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "YouTubeWidget.app/Contents/Info.plist";
 				CODE_SIGN_ENTITLEMENTS = "scripts/app.entitlements";
@@ -311,7 +311,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.6;
+				MARKETING_VERSION = 0.0.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.youtubewidget;
 				PRODUCT_NAME = YouTubeWidget;
 				SWIFT_VERSION = 5.0;
@@ -324,7 +324,7 @@
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "YouTubeWidget.app/Contents/Info.plist";
 				CODE_SIGN_ENTITLEMENTS = "scripts/app.entitlements";
@@ -332,7 +332,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.6;
+				MARKETING_VERSION = 0.0.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.youtubewidget;
 				PRODUCT_NAME = YouTubeWidget;
 				SWIFT_VERSION = 5.0;
@@ -344,7 +344,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGN_IDENTITY = "-";
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "scripts/extension-Info.plist";
 				CODE_SIGN_ENTITLEMENTS = "scripts/extension.entitlements";
@@ -353,7 +353,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.6;
+				MARKETING_VERSION = 0.0.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.youtubewidget.extension;
 				PRODUCT_NAME = YouTubeWidgetExtension;
 				SWIFT_VERSION = 5.0;
@@ -365,7 +365,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGN_IDENTITY = "-";
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "scripts/extension-Info.plist";
 				CODE_SIGN_ENTITLEMENTS = "scripts/extension.entitlements";
@@ -374,7 +374,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.6;
+				MARKETING_VERSION = 0.0.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.youtubewidget.extension;
 				PRODUCT_NAME = YouTubeWidgetExtension;
 				SWIFT_VERSION = 5.0;

@@ -116,6 +116,34 @@ public struct TikTokConfigurationIntent: WidgetConfigurationIntent {
     }
 }
 
+// MARK: - 4. Refresh Button Intent (Interactive WidgetKit Button)
+@available(macOS 14.0, *)
+public struct RefreshWidgetIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Widget'ı Yenile"
+    public static var description = IntentDescription("Widget verilerini anında günceller.")
+
+    @Parameter(title: "Platform")
+    public var platform: String?
+
+    @Parameter(title: "Handle")
+    public var handle: String?
+
+    public init() {}
+
+    public init(platform: String, handle: String) {
+        self.platform = platform
+        self.handle = handle
+    }
+
+    public func perform() async throws -> some IntentResult {
+        if let pStr = platform, let plat = SocialPlatform(rawValue: pStr), let h = handle, !h.isEmpty {
+            _ = await SocialDataLoader.load(platform: plat, rawQuery: h, theme: "red", forceRefresh: true)
+        }
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
+    }
+}
+
 // MARK: - Data Loader & Cache Engine
 enum SocialDataLoader {
     static func containerURL() -> URL {
@@ -219,7 +247,7 @@ enum SocialDataLoader {
         return nil
     }
 
-    static func load(platform: SocialPlatform, rawQuery: String, theme: String) async -> (SocialAccountStats, NSImage?, NSImage?) {
+    static func load(platform: SocialPlatform, rawQuery: String, theme: String, forceRefresh: Bool = false) async -> (SocialAccountStats, NSImage?, NSImage?) {
         let trimmed = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         let defaultHandle: String
         switch platform {
@@ -229,11 +257,14 @@ enum SocialDataLoader {
         }
         let handle = trimmed.isEmpty ? defaultHandle : trimmed
 
-        // 1. Try local cache for this specific handle
-        var stats = loadFromCache(platform: platform, handle: handle)
+        // 1. Try local cache for this specific handle (if not force refreshing)
+        var stats: SocialAccountStats? = nil
+        if !forceRefresh {
+            stats = loadFromCache(platform: platform, handle: handle)
+        }
 
-        // 2. Live fetch if no cache or older than 30 minutes
-        let isStale = stats == nil || Date().timeIntervalSince(stats?.lastUpdated ?? .distantPast) > 1800
+        // 2. Live fetch if forceRefresh, no cache, or older than 30 minutes
+        let isStale = forceRefresh || stats == nil || Date().timeIntervalSince(stats?.lastUpdated ?? .distantPast) > 1800
         if isStale {
             if let live = try? await SocialService.shared.fetchStats(slotID: safeKey(handle), platform: platform, input: handle, theme: theme) {
                 stats = live
@@ -410,6 +441,19 @@ struct SocialWidgetEntryView: View {
                 }
 
                 Spacer(minLength: 0)
+
+                // Refresh Button (Interactive WidgetKit Button)
+                Button(intent: RefreshWidgetIntent(platform: entry.stats.platform.rawValue, handle: entry.stats.handle)) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.white.opacity(0.85))
+                        .frame(width: 22, height: 22)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(0.12))
+                        )
+                }
+                .buttonStyle(.plain)
             }
 
             Spacer(minLength: 0)
@@ -516,11 +560,29 @@ struct SocialWidgetEntryView: View {
 
                     Spacer(minLength: 0)
 
+                    // Refresh Button
+                    Button(intent: RefreshWidgetIntent(platform: entry.stats.platform.rawValue, handle: entry.stats.handle)) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.white.opacity(0.80))
+                            .frame(width: 20, height: 20)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.12))
+                            )
+                    }
+                    .buttonStyle(.plain)
+
                     // Platform Logo / Settings link
                     Link(destination: URL(string: "youtubewidget://settings?platform=\(entry.stats.platform.rawValue)")!) {
                         Image(systemName: "gearshape.fill")
                             .font(.system(size: 10))
                             .foregroundColor(.white.opacity(0.45))
+                            .frame(width: 20, height: 20)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.08))
+                            )
                     }
                     .buttonStyle(.plain)
                 }
