@@ -7,24 +7,24 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		000100000000000000000082 /* YouTubeWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 000100000000000000000011 /* YouTubeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		3EBC0C8C90464CBDAC25125B /* YouTubeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24A848370DF467385BA6323 /* YouTubeWidget.swift */; };
-		994B56B0BE084A279BB0B396 /* WidgetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 860CB7290A704BD798F64059 /* WidgetViewModel.swift */; };
-		DD8F3A4703144FBA89417254 /* DesktopWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 192E1FEF4BB94F96B0A7D3D4 /* DesktopWindowManager.swift */; };
-		32191DCAF03D43DF8CD31C6E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D1D36F9BA345BF880C0499 /* SettingsView.swift */; };
-		E1DFD4A4365B45148EFF6B9A /* SharedDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E153833A0C7144B7B93E259E /* SharedDataManager.swift */; };
-		95036B7D3CED4BBF9490EB96 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB4D2EF0A5A481E9967B946 /* UpdateChecker.swift */; };
-		736630D8541C4B1099D59AC0 /* YouTubeStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89462C5B1FA4409E9C5AA4F0 /* YouTubeStats.swift */; };
-		57D2FEC894A84694ABA3B588 /* SocialStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DF2AF5E34648BE917486E8 /* SocialStats.swift */; };
-		B5163F5B194B43BE9985CC45 /* YouTubeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60601A749C754310BA3E3EE0 /* YouTubeService.swift */; };
-		C63B1A5B5E8E430E8FD29578 /* SocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B046BB5586B40B88A8AAF2D /* SocialService.swift */; };
-		6C1B318249B84AE4A9681C54 /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 654672246E0D46089DC9846E /* DebugLogger.swift */; };
-		5847C52E0DC6459DAC4D1D0A /* YouTubeWidgetExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 237B6206E9354FD8844E2D9D /* YouTubeWidgetExtension.swift */; };
-		174B7BDD421E422D929ED305 /* YouTubeStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89462C5B1FA4409E9C5AA4F0 /* YouTubeStats.swift */; };
-		123A6C789B624FB491115284 /* SocialStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DF2AF5E34648BE917486E8 /* SocialStats.swift */; };
-		E2B5DDA89D0A4B2F8BCDF7DF /* YouTubeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60601A749C754310BA3E3EE0 /* YouTubeService.swift */; };
-		BC9270886763416681A73087 /* SocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B046BB5586B40B88A8AAF2D /* SocialService.swift */; };
-		1794AF6CBB564298906091D0 /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 654672246E0D46089DC9846E /* DebugLogger.swift */; };
+		000100000000000000000082 /* FinchExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 000100000000000000000011 /* FinchExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F7CEAE7136C045AFA472DE69 /* YouTubeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0093F3923D7494A920B6F2A /* YouTubeWidget.swift */; };
+		783CC439554A41A1A631049E /* WidgetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7E8DB7F4344D998C7480B7 /* WidgetViewModel.swift */; };
+		1E59B734B5CB4B88ADB6F523 /* DesktopWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E08D332E04246AEC4ACA6 /* DesktopWindowManager.swift */; };
+		DFBE7709A4CB449794600B7D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B726B058724DBC989505AC /* SettingsView.swift */; };
+		F78A93796DF14B519A06D902 /* SharedDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 196DDC2B20BC45D5BCB65789 /* SharedDataManager.swift */; };
+		D6856509F62E4771B6F20579 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83845B14A6CF4421A8BCF91C /* UpdateChecker.swift */; };
+		400B0DEBE9FE43F8AF1B7172 /* YouTubeStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE94D876959147E2B127D78F /* YouTubeStats.swift */; };
+		9F845518EEA54E4FACA92E39 /* SocialStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = C471CD8E497B4032B0EFCFA2 /* SocialStats.swift */; };
+		EDCD84E54F154A2CA9A01AA1 /* YouTubeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1D678FB8E44ACD948CBB47 /* YouTubeService.swift */; };
+		18204FA09A5845D0ACAEEAE3 /* SocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5152D2B64C114D568A1E39F4 /* SocialService.swift */; };
+		697E1D78E95A43D7872BB409 /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F910D3FDE254D399C73B80A /* DebugLogger.swift */; };
+		BA087C53B67A4D73B7EDF9BA /* YouTubeWidgetExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CB352E0E3E64F5BA58BD613 /* YouTubeWidgetExtension.swift */; };
+		F463458BA9114AFDA2C01C08 /* YouTubeStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE94D876959147E2B127D78F /* YouTubeStats.swift */; };
+		94D239E6C28C4C6DA76F4B47 /* SocialStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = C471CD8E497B4032B0EFCFA2 /* SocialStats.swift */; };
+		8375644000EA4909823F4FDC /* YouTubeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1D678FB8E44ACD948CBB47 /* YouTubeService.swift */; };
+		E051611F5106487C924EC121 /* SocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5152D2B64C114D568A1E39F4 /* SocialService.swift */; };
+		CF5A81D33E25453BBD40893A /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F910D3FDE254D399C73B80A /* DebugLogger.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,7 +33,7 @@
 			containerPortal = 000100000000000000000001 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 000100000000000000000021;
-			remoteInfo = YouTubeWidgetExtension;
+			remoteInfo = FinchExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -44,7 +44,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				000100000000000000000082 /* YouTubeWidgetExtension.appex in Embed App Extensions */,
+				000100000000000000000082 /* FinchExtension.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -52,20 +52,20 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		000100000000000000000010 /* YouTubeWidget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YouTubeWidget.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		000100000000000000000011 /* YouTubeWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YouTubeWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		A24A848370DF467385BA6323 /* YouTubeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/YouTubeWidget.swift"; sourceTree = "<group>"; };
-		860CB7290A704BD798F64059 /* WidgetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/ViewModels/WidgetViewModel.swift"; sourceTree = "<group>"; };
-		192E1FEF4BB94F96B0A7D3D4 /* DesktopWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Windows/DesktopWindowManager.swift"; sourceTree = "<group>"; };
-		00D1D36F9BA345BF880C0499 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Views/SettingsView.swift"; sourceTree = "<group>"; };
-		E153833A0C7144B7B93E259E /* SharedDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/SharedDataManager.swift"; sourceTree = "<group>"; };
-		EDB4D2EF0A5A481E9967B946 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/UpdateChecker.swift"; sourceTree = "<group>"; };
-		89462C5B1FA4409E9C5AA4F0 /* YouTubeStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Models/YouTubeStats.swift"; sourceTree = "<group>"; };
-		E1DF2AF5E34648BE917486E8 /* SocialStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Models/SocialStats.swift"; sourceTree = "<group>"; };
-		60601A749C754310BA3E3EE0 /* YouTubeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/YouTubeService.swift"; sourceTree = "<group>"; };
-		2B046BB5586B40B88A8AAF2D /* SocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/SocialService.swift"; sourceTree = "<group>"; };
-		654672246E0D46089DC9846E /* DebugLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/DebugLogger.swift"; sourceTree = "<group>"; };
-		237B6206E9354FD8844E2D9D /* YouTubeWidgetExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidgetExtension/YouTubeWidgetExtension.swift"; sourceTree = "<group>"; };
+		000100000000000000000010 /* Finch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Finch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		000100000000000000000011 /* FinchExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FinchExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E0093F3923D7494A920B6F2A /* YouTubeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/YouTubeWidget.swift"; sourceTree = "<group>"; };
+		7A7E8DB7F4344D998C7480B7 /* WidgetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/ViewModels/WidgetViewModel.swift"; sourceTree = "<group>"; };
+		EE7E08D332E04246AEC4ACA6 /* DesktopWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Windows/DesktopWindowManager.swift"; sourceTree = "<group>"; };
+		61B726B058724DBC989505AC /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Views/SettingsView.swift"; sourceTree = "<group>"; };
+		196DDC2B20BC45D5BCB65789 /* SharedDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/SharedDataManager.swift"; sourceTree = "<group>"; };
+		83845B14A6CF4421A8BCF91C /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/UpdateChecker.swift"; sourceTree = "<group>"; };
+		AE94D876959147E2B127D78F /* YouTubeStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Models/YouTubeStats.swift"; sourceTree = "<group>"; };
+		C471CD8E497B4032B0EFCFA2 /* SocialStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Models/SocialStats.swift"; sourceTree = "<group>"; };
+		9A1D678FB8E44ACD948CBB47 /* YouTubeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/YouTubeService.swift"; sourceTree = "<group>"; };
+		5152D2B64C114D568A1E39F4 /* SocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/SocialService.swift"; sourceTree = "<group>"; };
+		2F910D3FDE254D399C73B80A /* DebugLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidget/Services/DebugLogger.swift"; sourceTree = "<group>"; };
+		2CB352E0E3E64F5BA58BD613 /* YouTubeWidgetExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/YouTubeWidgetExtension/YouTubeWidgetExtension.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,8 +97,8 @@
 		000100000000000000000003 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				000100000000000000000010 /* YouTubeWidget.app */,
-				000100000000000000000011 /* YouTubeWidgetExtension.appex */,
+				000100000000000000000010 /* Finch.app */,
+				000100000000000000000011 /* FinchExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -106,18 +106,18 @@
 		000100000000000000000004 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				A24A848370DF467385BA6323 /* YouTubeWidget.swift */,
-				860CB7290A704BD798F64059 /* WidgetViewModel.swift */,
-				192E1FEF4BB94F96B0A7D3D4 /* DesktopWindowManager.swift */,
-				00D1D36F9BA345BF880C0499 /* SettingsView.swift */,
-				E153833A0C7144B7B93E259E /* SharedDataManager.swift */,
-				EDB4D2EF0A5A481E9967B946 /* UpdateChecker.swift */,
-				89462C5B1FA4409E9C5AA4F0 /* YouTubeStats.swift */,
-				E1DF2AF5E34648BE917486E8 /* SocialStats.swift */,
-				60601A749C754310BA3E3EE0 /* YouTubeService.swift */,
-				2B046BB5586B40B88A8AAF2D /* SocialService.swift */,
-				654672246E0D46089DC9846E /* DebugLogger.swift */,
-				237B6206E9354FD8844E2D9D /* YouTubeWidgetExtension.swift */,
+				E0093F3923D7494A920B6F2A /* YouTubeWidget.swift */,
+				7A7E8DB7F4344D998C7480B7 /* WidgetViewModel.swift */,
+				EE7E08D332E04246AEC4ACA6 /* DesktopWindowManager.swift */,
+				61B726B058724DBC989505AC /* SettingsView.swift */,
+				196DDC2B20BC45D5BCB65789 /* SharedDataManager.swift */,
+				83845B14A6CF4421A8BCF91C /* UpdateChecker.swift */,
+				AE94D876959147E2B127D78F /* YouTubeStats.swift */,
+				C471CD8E497B4032B0EFCFA2 /* SocialStats.swift */,
+				9A1D678FB8E44ACD948CBB47 /* YouTubeService.swift */,
+				5152D2B64C114D568A1E39F4 /* SocialService.swift */,
+				2F910D3FDE254D399C73B80A /* DebugLogger.swift */,
+				2CB352E0E3E64F5BA58BD613 /* YouTubeWidgetExtension.swift */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -141,12 +141,12 @@
 			);
 			name = YouTubeWidget;
 			productName = YouTubeWidget;
-			productReference = 000100000000000000000010 /* YouTubeWidget.app */;
+			productReference = 000100000000000000000010 /* Finch.app */;
 			productType = "com.apple.product-type.application";
 		};
-		000100000000000000000021 /* YouTubeWidgetExtension */ = {
+		000100000000000000000021 /* FinchExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 000100000000000000000050 /* Build configuration list for PBXNativeTarget "YouTubeWidgetExtension" */;
+			buildConfigurationList = 000100000000000000000050 /* Build configuration list for PBXNativeTarget "FinchExtension" */;
 			buildPhases = (
 				000100000000000000000070 /* Sources */,
 				000100000000000000000071 /* Frameworks */,
@@ -156,9 +156,9 @@
 			);
 			dependencies = (
 			);
-			name = YouTubeWidgetExtension;
-			productName = YouTubeWidgetExtension;
-			productReference = 000100000000000000000011 /* YouTubeWidgetExtension.appex */;
+			name = FinchExtension;
+			productName = FinchExtension;
+			productReference = 000100000000000000000011 /* FinchExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -193,7 +193,7 @@
 			projectRoot = "";
 			targets = (
 				000100000000000000000020 /* YouTubeWidget */,
-				000100000000000000000021 /* YouTubeWidgetExtension */,
+				000100000000000000000021 /* FinchExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -220,17 +220,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3EBC0C8C90464CBDAC25125B /* YouTubeWidget.swift in Sources */,
-				994B56B0BE084A279BB0B396 /* WidgetViewModel.swift in Sources */,
-				DD8F3A4703144FBA89417254 /* DesktopWindowManager.swift in Sources */,
-				32191DCAF03D43DF8CD31C6E /* SettingsView.swift in Sources */,
-				E1DFD4A4365B45148EFF6B9A /* SharedDataManager.swift in Sources */,
-				95036B7D3CED4BBF9490EB96 /* UpdateChecker.swift in Sources */,
-				736630D8541C4B1099D59AC0 /* YouTubeStats.swift in Sources */,
-				57D2FEC894A84694ABA3B588 /* SocialStats.swift in Sources */,
-				B5163F5B194B43BE9985CC45 /* YouTubeService.swift in Sources */,
-				C63B1A5B5E8E430E8FD29578 /* SocialService.swift in Sources */,
-				6C1B318249B84AE4A9681C54 /* DebugLogger.swift in Sources */,
+				F7CEAE7136C045AFA472DE69 /* YouTubeWidget.swift in Sources */,
+				783CC439554A41A1A631049E /* WidgetViewModel.swift in Sources */,
+				1E59B734B5CB4B88ADB6F523 /* DesktopWindowManager.swift in Sources */,
+				DFBE7709A4CB449794600B7D /* SettingsView.swift in Sources */,
+				F78A93796DF14B519A06D902 /* SharedDataManager.swift in Sources */,
+				D6856509F62E4771B6F20579 /* UpdateChecker.swift in Sources */,
+				400B0DEBE9FE43F8AF1B7172 /* YouTubeStats.swift in Sources */,
+				9F845518EEA54E4FACA92E39 /* SocialStats.swift in Sources */,
+				EDCD84E54F154A2CA9A01AA1 /* YouTubeService.swift in Sources */,
+				18204FA09A5845D0ACAEEAE3 /* SocialService.swift in Sources */,
+				697E1D78E95A43D7872BB409 /* DebugLogger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -238,12 +238,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5847C52E0DC6459DAC4D1D0A /* YouTubeWidgetExtension.swift in Sources */,
-				174B7BDD421E422D929ED305 /* YouTubeStats.swift in Sources */,
-				123A6C789B624FB491115284 /* SocialStats.swift in Sources */,
-				E2B5DDA89D0A4B2F8BCDF7DF /* YouTubeService.swift in Sources */,
-				BC9270886763416681A73087 /* SocialService.swift in Sources */,
-				1794AF6CBB564298906091D0 /* DebugLogger.swift in Sources */,
+				BA087C53B67A4D73B7EDF9BA /* YouTubeWidgetExtension.swift in Sources */,
+				F463458BA9114AFDA2C01C08 /* YouTubeStats.swift in Sources */,
+				94D239E6C28C4C6DA76F4B47 /* SocialStats.swift in Sources */,
+				8375644000EA4909823F4FDC /* YouTubeService.swift in Sources */,
+				E051611F5106487C924EC121 /* SocialService.swift in Sources */,
+				CF5A81D33E25453BBD40893A /* DebugLogger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -307,7 +307,7 @@
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Finch.app/Contents/Info.plist";
 				CODE_SIGN_ENTITLEMENTS = "scripts/app.entitlements";
@@ -315,7 +315,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.7;
+				MARKETING_VERSION = 0.0.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.finch;
 				PRODUCT_NAME = YouTubeWidget;
 				SWIFT_VERSION = 5.0;
@@ -328,7 +328,7 @@
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Finch.app/Contents/Info.plist";
 				CODE_SIGN_ENTITLEMENTS = "scripts/app.entitlements";
@@ -336,7 +336,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.7;
+				MARKETING_VERSION = 0.0.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.finch;
 				PRODUCT_NAME = YouTubeWidget;
 				SWIFT_VERSION = 5.0;
@@ -348,7 +348,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGN_IDENTITY = "-";
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "scripts/extension-Info.plist";
 				CODE_SIGN_ENTITLEMENTS = "scripts/extension.entitlements";
@@ -357,9 +357,9 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.7;
+				MARKETING_VERSION = 0.0.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.finch.extension;
-				PRODUCT_NAME = YouTubeWidgetExtension;
+				PRODUCT_NAME = FinchExtension;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -369,7 +369,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGN_IDENTITY = "-";
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "scripts/extension-Info.plist";
 				CODE_SIGN_ENTITLEMENTS = "scripts/extension.entitlements";
@@ -378,9 +378,9 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.7;
+				MARKETING_VERSION = 0.0.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.finch.extension;
-				PRODUCT_NAME = YouTubeWidgetExtension;
+				PRODUCT_NAME = FinchExtension;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

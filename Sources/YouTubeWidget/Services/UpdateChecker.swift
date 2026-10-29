@@ -43,7 +43,7 @@ public final class UpdateChecker: ObservableObject {
     @Published public var showReleaseNotesSheet: Bool = false
 
     public var currentVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.7"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.8"
     }
 
     public var latestVersion: String {

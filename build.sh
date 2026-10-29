@@ -7,7 +7,7 @@ cd "$DIR"
 export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
 
 echo "=========================================="
-echo "  🎬 Finch macOS Widget v0.0.7 Derleniyor...  "
+echo "  🎬 Finch macOS Widget v0.0.8 Derleniyor...  "
 echo "  🛠️  Xcode: $(xcodebuild -version | head -n 1)"
 echo "=========================================="
 
@@ -29,9 +29,10 @@ mkdir -p "$MACOS_DIR"
 mkdir -p "$RESOURCES_DIR"
 mkdir -p "$PLUGINS_DIR"
 
-# İkili dosyayı kopyala
-cp "$BIN_PATH" "$MACOS_DIR/YouTubeWidget"
-chmod +x "$MACOS_DIR/YouTubeWidget"
+# İkili dosyayı kopyala (Finch olarak)
+cp "$BIN_PATH" "$MACOS_DIR/Finch"
+chmod +x "$MACOS_DIR/Finch"
+ln -sf "Finch" "$MACOS_DIR/YouTubeWidget"
 
 # İkon ve AssetCatalog kontrolü ve kopyalama
 if [ ! -f "$DIR/AppIcon.icns" ] || [ ! -f "$DIR/Assets.car" ]; then
@@ -50,7 +51,7 @@ cat << 'EOF' > "$CONTENTS_DIR/Info.plist"
     <key>CFBundleDevelopmentRegion</key>
     <string>tr</string>
     <key>CFBundleExecutable</key>
-    <string>YouTubeWidget</string>
+    <string>Finch</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleIconName</key>
@@ -66,13 +67,13 @@ cat << 'EOF' > "$CONTENTS_DIR/Info.plist"
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.0.7</string>
+    <string>0.0.8</string>
     <key>CFBundleSupportedPlatforms</key>
     <array>
         <string>MacOSX</string>
     </array>
     <key>CFBundleVersion</key>
-    <string>7</string>
+    <string>8</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
@@ -106,16 +107,16 @@ echo "🧩 3. macOS WidgetKit Uzantısı derleniyor (Xcode & AppIntents Metadata
 python3 "$DIR/scripts/generate_project.py"
 
 xcodebuild -project "$DIR/YouTubeWidget.xcodeproj" \
-    -target YouTubeWidgetExtension \
+    -target FinchExtension \
     -configuration Release \
     CODE_SIGN_IDENTITY="-" \
     CODE_SIGNING_REQUIRED=YES \
     CODE_SIGNING_ALLOWED=YES \
     -quiet
 
-EXTENSION_DIR="$PLUGINS_DIR/YouTubeWidgetExtension.appex"
+EXTENSION_DIR="$PLUGINS_DIR/FinchExtension.appex"
 rm -rf "$EXTENSION_DIR"
-cp -R "$DIR/build/Release/YouTubeWidgetExtension.appex" "$EXTENSION_DIR"
+cp -R "$DIR/build/Release/FinchExtension.appex" "$EXTENSION_DIR"
 mkdir -p "$EXTENSION_DIR/Contents/Resources"
 cp "$DIR/AppIcon.icns" "$EXTENSION_DIR/Contents/Resources/AppIcon.icns"
 cp "$DIR/Assets.car" "$EXTENSION_DIR/Contents/Resources/Assets.car"
@@ -123,7 +124,7 @@ cp "$DIR/Assets.car" "$EXTENSION_DIR/Contents/Resources/Assets.car"
 # 5. Ad-hoc Kod İmzalama (Doğru hiyerarşiyle ve runtime options ile)
 echo "🔏 4. Kod imzalanıyor (App Sandbox & Runtime yetkileri)..."
 codesign --force --options runtime --sign - --entitlements "$DIR/scripts/extension.entitlements" "$EXTENSION_DIR" 2>/dev/null || true
-codesign --force --options runtime --sign - --entitlements "$DIR/scripts/app.entitlements" "$MACOS_DIR/YouTubeWidget" 2>/dev/null || true
+codesign --force --options runtime --sign - --entitlements "$DIR/scripts/app.entitlements" "$MACOS_DIR/Finch" 2>/dev/null || true
 codesign --force --options runtime --sign - "$APP_DIR" 2>/dev/null || true
 
 # 6. /Applications dizinine senkronizasyon & LaunchServices kaydı
@@ -135,8 +136,8 @@ rm -rf "/Applications/Finch.app"
 cp -R "$APP_DIR" /Applications/
 
 # /Applications altındaki imzayı tazele
-codesign --force --options runtime --sign - --entitlements "$DIR/scripts/extension.entitlements" "/Applications/Finch.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
-codesign --force --options runtime --sign - --entitlements "$DIR/scripts/app.entitlements" "/Applications/Finch.app/Contents/MacOS/YouTubeWidget" 2>/dev/null || true
+codesign --force --options runtime --sign - --entitlements "$DIR/scripts/extension.entitlements" "/Applications/Finch.app/Contents/PlugIns/FinchExtension.appex" 2>/dev/null || true
+codesign --force --options runtime --sign - --entitlements "$DIR/scripts/app.entitlements" "/Applications/Finch.app/Contents/MacOS/Finch" 2>/dev/null || true
 codesign --force --options runtime --sign - "/Applications/Finch.app" 2>/dev/null || true
 
 # macOS LaunchServices & PluginKit sistem kaydı
@@ -149,22 +150,25 @@ fi
 pluginkit -r "$DIR/YouTubeWidget.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
 pluginkit -r "/Applications/YouTubeWidget.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
 pluginkit -r "$DIR/Finch.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
-pluginkit -a "/Applications/Finch.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
+pluginkit -r "/Applications/Finch.app/Contents/PlugIns/YouTubeWidgetExtension.appex" 2>/dev/null || true
+pluginkit -r "$DIR/Finch.app/Contents/PlugIns/FinchExtension.appex" 2>/dev/null || true
+pluginkit -a "/Applications/Finch.app/Contents/PlugIns/FinchExtension.appex" 2>/dev/null || true
 pluginkit -e use -i com.ufukcelen.finch.extension 2>/dev/null || true
 
 # Simge & dock & widget önbelleklerini temizle ve zaman damgalarını güncelle
 touch /Applications/Finch.app
-touch /Applications/Finch.app/Contents/PlugIns/YouTubeWidgetExtension.appex
-rm -rf /private/var/folders/*/*/*/com.apple.iconservices* 2>/dev/null || true
-rm -rf /private/var/folders/*/*/*/com.apple.dock.iconcache 2>/dev/null || true
+touch /Applications/Finch.app/Contents/PlugIns/FinchExtension.appex
+find /private/var/folders -name "*dock.iconcache*" -delete 2>/dev/null || true
+find /private/var/folders -name "*iconservices*" -exec rm -rf {} + 2>/dev/null || true
 
 # chronod, NotificationCenter ve Dock (Widget Galerisi) servislerini yenile
+killall iconservicesagent 2>/dev/null || true
 killall -9 chronod 2>/dev/null || true
 killall -9 NotificationCenter 2>/dev/null || true
 killall Dock 2>/dev/null || true
 
 echo "=========================================="
-echo "✅ Tamamlandı! Finch v0.0.7 başarıyla kuruldu:"
+echo "✅ Tamamlandı! Finch v0.0.8 başarıyla kuruldu:"
 echo "   📍 /Applications/Finch.app"
 echo "   🧩 WidgetKit Uzantısı: Aktif (3 Platform: YouTube, Instagram, TikTok - Küçük & Orta)"
 echo "   🔄 Anlık Yenileme Butonu: Aktif (Masaüstünden tek tıkla canlı güncelleme)"

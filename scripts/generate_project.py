@@ -112,7 +112,7 @@ def create_project(base_dir):
 
 /* Begin PBXBuildFile section */
 """)
-        out.write(f"\t\t{ext_in_embed_build_file_id} /* YouTubeWidgetExtension.appex in Embed App Extensions */ = {{isa = PBXBuildFile; fileRef = {ext_product_id} /* YouTubeWidgetExtension.appex */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};\n")
+        out.write(f"\t\t{ext_in_embed_build_file_id} /* FinchExtension.appex in Embed App Extensions */ = {{isa = PBXBuildFile; fileRef = {ext_product_id} /* FinchExtension.appex */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};\n")
         for bf_id, (f_ref, f_path) in build_files.items():
             base_name = os.path.basename(f_path)
             out.write(f"\t\t{bf_id} /* {base_name} in Sources */ = {{isa = PBXBuildFile; fileRef = {f_ref} /* {base_name} */; }};\n")
@@ -125,7 +125,7 @@ def create_project(base_dir):
 \t\t\tcontainerPortal = {proj_id} /* Project object */;
 \t\t\tproxyType = 1;
 \t\t\tremoteGlobalIDString = {ext_target_id};
-\t\t\tremoteInfo = YouTubeWidgetExtension;
+\t\t\tremoteInfo = FinchExtension;
 \t\t}};
 /* End PBXContainerItemProxy section */
 
@@ -136,7 +136,7 @@ def create_project(base_dir):
 \t\t\tdstPath = "";
 \t\t\tdstSubfolderSpec = 13;
 \t\t\tfiles = (
-\t\t\t\t{ext_in_embed_build_file_id} /* YouTubeWidgetExtension.appex in Embed App Extensions */,
+\t\t\t\t{ext_in_embed_build_file_id} /* FinchExtension.appex in Embed App Extensions */,
 \t\t\t);
 \t\t\tname = "Embed App Extensions";
 \t\t\trunOnlyForDeploymentPostprocessing = 0;
@@ -144,8 +144,8 @@ def create_project(base_dir):
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-\t\t{app_product_id} /* YouTubeWidget.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YouTubeWidget.app; sourceTree = BUILT_PRODUCTS_DIR; }};
-\t\t{ext_product_id} /* YouTubeWidgetExtension.appex */ = {{isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YouTubeWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; }};
+\t\t{app_product_id} /* Finch.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Finch.app; sourceTree = BUILT_PRODUCTS_DIR; }};
+\t\t{ext_product_id} /* FinchExtension.appex */ = {{isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FinchExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; }};
 """)
         for f_path, f_ref in file_refs.items():
             base_name = os.path.basename(f_path)
@@ -182,8 +182,8 @@ def create_project(base_dir):
 \t\t{products_group_id} /* Products */ = {{
 \t\t\tisa = PBXGroup;
 \t\t\tchildren = (
-\t\t\t\t{app_product_id} /* YouTubeWidget.app */,
-\t\t\t\t{ext_product_id} /* YouTubeWidgetExtension.appex */,
+\t\t\t\t{app_product_id} /* Finch.app */,
+\t\t\t\t{ext_product_id} /* FinchExtension.appex */,
 \t\t\t);
 \t\t\tname = Products;
 \t\t\tsourceTree = \"<group>\";
@@ -218,12 +218,12 @@ def create_project(base_dir):
 \t\t\t);
 \t\t\tname = YouTubeWidget;
 \t\t\tproductName = YouTubeWidget;
-\t\t\tproductReference = {app_product_id} /* YouTubeWidget.app */;
+\t\t\tproductReference = {app_product_id} /* Finch.app */;
 \t\t\tproductType = \"com.apple.product-type.application\";
 \t\t}};
-\t\t{ext_target_id} /* YouTubeWidgetExtension */ = {{
+\t\t{ext_target_id} /* FinchExtension */ = {{
 \t\t\tisa = PBXNativeTarget;
-\t\t\tbuildConfigurationList = {ext_cfg_list_id} /* Build configuration list for PBXNativeTarget "YouTubeWidgetExtension" */;
+\t\t\tbuildConfigurationList = {ext_cfg_list_id} /* Build configuration list for PBXNativeTarget "FinchExtension" */;
 \t\t\tbuildPhases = (
 \t\t\t\t{ext_sources_phase_id} /* Sources */,
 \t\t\t\t{ext_frameworks_phase_id} /* Frameworks */,
@@ -233,9 +233,9 @@ def create_project(base_dir):
 \t\t\t);
 \t\t\tdependencies = (
 \t\t\t);
-\t\t\tname = YouTubeWidgetExtension;
-\t\t\tproductName = YouTubeWidgetExtension;
-\t\t\tproductReference = {ext_product_id} /* YouTubeWidgetExtension.appex */;
+\t\t\tname = FinchExtension;
+\t\t\tproductName = FinchExtension;
+\t\t\tproductReference = {ext_product_id} /* FinchExtension.appex */;
 \t\t\tproductType = \"com.apple.product-type.app-extension\";
 \t\t}};
 /* End PBXNativeTarget section */
@@ -270,7 +270,7 @@ def create_project(base_dir):
 \t\t\tprojectRoot = \"\";
 \t\t\ttargets = (
 \t\t\t\t{app_target_id} /* YouTubeWidget */,
-\t\t\t\t{ext_target_id} /* YouTubeWidgetExtension */,
+\t\t\t\t{ext_target_id} /* FinchExtension */,
 \t\t\t);
 \t\t}};
 /* End PBXProject section */
@@ -377,7 +377,7 @@ def create_project(base_dir):
 \t\t\t\tCODE_SIGN_STYLE = Manual;
 \t\t\t\tCODE_SIGN_IDENTITY = \"-\";
 \t\t\t\tCOMBINE_HIDPI_IMAGES = YES;
-\t\t\t\tCURRENT_PROJECT_VERSION = 7;
+\t\t\t\tCURRENT_PROJECT_VERSION = 8;
 \t\t\t\tGENERATE_INFOPLIST_FILE = NO;
 \t\t\t\tINFOPLIST_FILE = \"Finch.app/Contents/Info.plist\";
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = \"scripts/app.entitlements\";
@@ -385,7 +385,7 @@ def create_project(base_dir):
 \t\t\t\t\t\"$(inherited)\",
 \t\t\t\t\t\"@executable_path/../Frameworks\",
 \t\t\t\t);
-\t\t\t\tMARKETING_VERSION = 0.0.7;
+\t\t\t\tMARKETING_VERSION = 0.0.8;
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.finch;
 \t\t\t\tPRODUCT_NAME = YouTubeWidget;
 \t\t\t\tSWIFT_VERSION = 5.0;
@@ -398,7 +398,7 @@ def create_project(base_dir):
 \t\t\t\tCODE_SIGN_STYLE = Manual;
 \t\t\t\tCODE_SIGN_IDENTITY = \"-\";
 \t\t\t\tCOMBINE_HIDPI_IMAGES = YES;
-\t\t\t\tCURRENT_PROJECT_VERSION = 7;
+\t\t\t\tCURRENT_PROJECT_VERSION = 8;
 \t\t\t\tGENERATE_INFOPLIST_FILE = NO;
 \t\t\t\tINFOPLIST_FILE = \"Finch.app/Contents/Info.plist\";
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = \"scripts/app.entitlements\";
@@ -406,7 +406,7 @@ def create_project(base_dir):
 \t\t\t\t\t\"$(inherited)\",
 \t\t\t\t\t\"@executable_path/../Frameworks\",
 \t\t\t\t);
-\t\t\t\tMARKETING_VERSION = 0.0.7;
+\t\t\t\tMARKETING_VERSION = 0.0.8;
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.finch;
 \t\t\t\tPRODUCT_NAME = YouTubeWidget;
 \t\t\t\tSWIFT_VERSION = 5.0;
@@ -418,7 +418,7 @@ def create_project(base_dir):
 \t\t\tbuildSettings = {{
 \t\t\t\tCODE_SIGN_STYLE = Manual;
 \t\t\t\tCODE_SIGN_IDENTITY = \"-\";
-\t\t\t\tCURRENT_PROJECT_VERSION = 7;
+\t\t\t\tCURRENT_PROJECT_VERSION = 8;
 \t\t\t\tGENERATE_INFOPLIST_FILE = NO;
 \t\t\t\tINFOPLIST_FILE = \"scripts/extension-Info.plist\";
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = \"scripts/extension.entitlements\";
@@ -427,9 +427,9 @@ def create_project(base_dir):
 \t\t\t\t\t\"@executable_path/../Frameworks\",
 \t\t\t\t\t\"@executable_path/../../../../Frameworks\",
 \t\t\t\t);
-\t\t\t\tMARKETING_VERSION = 0.0.7;
+\t\t\t\tMARKETING_VERSION = 0.0.8;
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.finch.extension;
-\t\t\t\tPRODUCT_NAME = YouTubeWidgetExtension;
+\t\t\t\tPRODUCT_NAME = FinchExtension;
 \t\t\t\tSWIFT_VERSION = 5.0;
 \t\t\t}};
 \t\t\tname = Debug;
@@ -439,7 +439,7 @@ def create_project(base_dir):
 \t\t\tbuildSettings = {{
 \t\t\t\tCODE_SIGN_STYLE = Manual;
 \t\t\t\tCODE_SIGN_IDENTITY = \"-\";
-\t\t\t\tCURRENT_PROJECT_VERSION = 7;
+\t\t\t\tCURRENT_PROJECT_VERSION = 8;
 \t\t\t\tGENERATE_INFOPLIST_FILE = NO;
 \t\t\t\tINFOPLIST_FILE = \"scripts/extension-Info.plist\";
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = \"scripts/extension.entitlements\";
@@ -448,9 +448,9 @@ def create_project(base_dir):
 \t\t\t\t\t\"@executable_path/../Frameworks\",
 \t\t\t\t\t\"@executable_path/../../../../Frameworks\",
 \t\t\t\t);
-\t\t\t\tMARKETING_VERSION = 0.0.7;
+\t\t\t\tMARKETING_VERSION = 0.0.8;
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.ufukcelen.finch.extension;
-\t\t\t\tPRODUCT_NAME = YouTubeWidgetExtension;
+\t\t\t\tPRODUCT_NAME = FinchExtension;
 \t\t\t\tSWIFT_VERSION = 5.0;
 \t\t\t}};
 \t\t\tname = Release;

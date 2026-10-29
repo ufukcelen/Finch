@@ -7,7 +7,7 @@
     <key>CFBundleDisplayName</key>
     <string>Finch</string>
     <key>CFBundleExecutable</key>
-    <string>YouTubeWidgetExtension</string>
+    <string>FinchExtension</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleIconName</key>
@@ -21,13 +21,13 @@
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.0.7</string>
+    <string>0.0.8</string>
     <key>CFBundleSupportedPlatforms</key>
     <array>
         <string>MacOSX</string>
     </array>
     <key>CFBundleVersion</key>
-    <string>7</string>
+    <string>8</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>NSExtension</key>
