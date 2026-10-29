@@ -138,6 +138,8 @@ public struct RefreshWidgetIntent: AppIntent {
     public func perform() async throws -> some IntentResult {
         if let pStr = platform, let plat = SocialPlatform(rawValue: pStr), let h = handle, !h.isEmpty {
             _ = await SocialDataLoader.load(platform: plat, rawQuery: h, theme: "red", forceRefresh: true)
+            WidgetCenter.shared.reloadTimelines(ofKind: "com.ufukcelen.finch.intent.\(plat.rawValue)")
+            WidgetCenter.shared.reloadTimelines(ofKind: "com.ufukcelen.youtubewidget.intent.\(plat.rawValue)")
         }
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
@@ -146,18 +148,32 @@ public struct RefreshWidgetIntent: AppIntent {
 
 // MARK: - Data Loader & Cache Engine
 enum SocialDataLoader {
-    static func containerURL() -> URL {
+    static func allCandidateURLs() -> [URL] {
         var candidates: [URL] = []
-        if let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.ufukcelen.youtubewidget") {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+
+        if let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.ufukcelen.finch") ??
+                          FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.ufukcelen.youtubewidget") {
+            candidates.append(groupURL.appendingPathComponent("Library/Application Support/Finch", isDirectory: true))
             candidates.append(groupURL.appendingPathComponent("Library/Application Support/YouTubeWidget", isDirectory: true))
         }
-        let home = FileManager.default.homeDirectoryForCurrentUser
+
+        candidates.append(home.appendingPathComponent("Library/Containers/com.ufukcelen.finch.extension/Data/Library/Application Support/Finch", isDirectory: true))
         candidates.append(home.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/Library/Application Support/YouTubeWidget", isDirectory: true))
+
         if let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            candidates.append(appSupport.appendingPathComponent("Finch", isDirectory: true))
             candidates.append(appSupport.appendingPathComponent("YouTubeWidget", isDirectory: true))
         }
+
+        candidates.append(home.appendingPathComponent("Library/Containers/com.ufukcelen.finch/Data/Library/Application Support/Finch", isDirectory: true))
         candidates.append(home.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget/Data/Library/Application Support/YouTubeWidget", isDirectory: true))
 
+        return candidates
+    }
+
+    static func containerURL() -> URL {
+        let candidates = allCandidateURLs()
         for dir in candidates {
             let file = dir.appendingPathComponent("shared_data.json")
             if FileManager.default.fileExists(atPath: file.path) {
@@ -199,27 +215,27 @@ enum SocialDataLoader {
     }
 
     static func saveToCache(stats: SocialAccountStats) {
-        let dir = containerURL()
-        let file = dir.appendingPathComponent("shared_data.json")
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let targets = allCandidateURLs()
+        for dir in targets {
+            let file = dir.appendingPathComponent("shared_data.json")
+            var dict: [String: Any] = [:]
+            if let data = try? Data(contentsOf: file),
+               let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                dict = existing
+            }
 
-        var dict: [String: Any] = [:]
-        if let data = try? Data(contentsOf: file),
-           let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            dict = existing
-        }
+            var accounts = dict["accounts"] as? [String: [String: Any]] ?? [:]
+            if let encoded = try? JSONEncoder().encode(stats),
+               let statDict = try? JSONSerialization.jsonObject(with: encoded) as? [String: Any] {
+                accounts[safeKey(stats.handle)] = statDict
+            }
+            dict["accounts"] = accounts
+            dict["lastSaved"] = Date().timeIntervalSince1970
 
-        var accounts = dict["accounts"] as? [String: [String: Any]] ?? [:]
-        if let encoded = try? JSONEncoder().encode(stats),
-           let statDict = try? JSONSerialization.jsonObject(with: encoded) as? [String: Any] {
-            // Save ONLY under the specific handle so channels never overwrite each other!
-            accounts[safeKey(stats.handle)] = statDict
-        }
-        dict["accounts"] = accounts
-        dict["lastSaved"] = Date().timeIntervalSince1970
-
-        if let finalData = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted) {
-            try? finalData.write(to: file)
+            if let finalData = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted) {
+                try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                try? finalData.write(to: file, options: .atomic)
+            }
         }
     }
 
@@ -497,9 +513,14 @@ struct SocialWidgetEntryView: View {
 
                 Spacer()
 
-                Text("Canlı")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(.white.opacity(0.75))
+                HStack(spacing: 3) {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 4, height: 4)
+                    Text(entry.date, style: .time)
+                        .font(.system(size: 8, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.80))
+                }
             }
         }
         .padding(13)
@@ -622,6 +643,17 @@ struct SocialWidgetEntryView: View {
                         .font(.system(size: 9))
                     Text(entry.stats.platform.displayName)
                         .font(.system(size: 9, weight: .bold, design: .rounded))
+
+                    Spacer()
+
+                    HStack(spacing: 3) {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 4, height: 4)
+                        Text(entry.date, style: .time)
+                            .font(.system(size: 8, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.70))
+                    }
                 }
                 .foregroundColor(Color(hex: entry.stats.platform.brandColorHex))
             }
@@ -786,7 +818,7 @@ extension Color {
 // MARK: - 3 Independent AppIntent-Configurable Widgets
 @available(macOS 14.0, *)
 struct YouTubeWidget: Widget {
-    let kind: String = "com.ufukcelen.youtubewidget.intent.youtube"
+    let kind: String = "com.ufukcelen.finch.intent.youtube"
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(
@@ -805,7 +837,7 @@ struct YouTubeWidget: Widget {
 
 @available(macOS 14.0, *)
 struct InstagramWidget: Widget {
-    let kind: String = "com.ufukcelen.youtubewidget.intent.instagram"
+    let kind: String = "com.ufukcelen.finch.intent.instagram"
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(
@@ -824,7 +856,7 @@ struct InstagramWidget: Widget {
 
 @available(macOS 14.0, *)
 struct TikTokWidget: Widget {
-    let kind: String = "com.ufukcelen.youtubewidget.intent.tiktok"
+    let kind: String = "com.ufukcelen.finch.intent.tiktok"
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(

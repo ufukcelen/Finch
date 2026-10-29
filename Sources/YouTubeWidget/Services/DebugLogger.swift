@@ -26,12 +26,12 @@ public final class DebugLogger: @unchecked Sendable, ObservableObject {
     public static let shared = DebugLogger()
 
     @Published public private(set) var entries: [LogEntry] = []
-    private let queue = DispatchQueue(label: "com.ufukcelen.youtubewidget.debuglogger", qos: .utility)
+    private let queue = DispatchQueue(label: "com.ufukcelen.finch.debuglogger", qos: .utility)
     public let logFileURL: URL
 
     private init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = appSupport.appendingPathComponent("YouTubeWidget", isDirectory: true)
+        let dir = appSupport.appendingPathComponent("Finch", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         self.logFileURL = dir.appendingPathComponent("debug.log")
 

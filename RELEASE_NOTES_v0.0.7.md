@@ -17,3 +17,4 @@
 ### 🔐 Doğrulama (Checksum)
 - **SHA-256:** `76e1feb83240de778c669aef343b313cc2ee785c73a1ef8c5191448a8630e5f9`
 - **Dosya:** `YouTubeWidget-v0.0.7-macOS.zip` (756 KB)
+

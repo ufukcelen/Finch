@@ -26,34 +26,49 @@ public final class SharedDataManager: @unchecked Sendable {
 
     public init() {
         var dirs: [URL] = []
+        let userHome = FileManager.default.homeDirectoryForCurrentUser
 
-        // 1. App Group container (if configured and valid)
-        if let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.ufukcelen.youtubewidget") {
-            let groupDir = groupURL.appendingPathComponent("Library/Application Support/YouTubeWidget", isDirectory: true)
+        // 1. App Group container (Finch & fallback)
+        if let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.ufukcelen.finch") ??
+                          FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.ufukcelen.youtubewidget") {
+            let groupDir = groupURL.appendingPathComponent("Library/Application Support/Finch", isDirectory: true)
             try? FileManager.default.createDirectory(at: groupDir, withIntermediateDirectories: true)
             dirs.append(groupDir)
         }
 
         // 2. Standard user Application Support
         if let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-            let standardDir = appSupport.appendingPathComponent("YouTubeWidget", isDirectory: true)
-            try? FileManager.default.createDirectory(at: standardDir, withIntermediateDirectories: true)
-            dirs.append(standardDir)
+            let finchDir = appSupport.appendingPathComponent("Finch", isDirectory: true)
+            try? FileManager.default.createDirectory(at: finchDir, withIntermediateDirectories: true)
+            dirs.append(finchDir)
+
+            let legacyDir = appSupport.appendingPathComponent("YouTubeWidget", isDirectory: true)
+            try? FileManager.default.createDirectory(at: legacyDir, withIntermediateDirectories: true)
+            dirs.append(legacyDir)
         }
 
-        // 3. Extension Container direct path
-        let userHome = FileManager.default.homeDirectoryForCurrentUser
-        let extDirectDir = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/Library/Application Support/YouTubeWidget", isDirectory: true)
-        try? FileManager.default.createDirectory(at: extDirectDir, withIntermediateDirectories: true)
-        if !dirs.contains(where: { $0.path == extDirectDir.path }) {
-            dirs.append(extDirectDir)
+        // 3. Extension Container direct paths (Finch & legacy)
+        let extDirs = [
+            userHome.appendingPathComponent("Library/Containers/com.ufukcelen.finch.extension/Data/Library/Application Support/Finch", isDirectory: true),
+            userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/Library/Application Support/YouTubeWidget", isDirectory: true)
+        ]
+        for ed in extDirs {
+            try? FileManager.default.createDirectory(at: ed, withIntermediateDirectories: true)
+            if !dirs.contains(where: { $0.path == ed.path }) {
+                dirs.append(ed)
+            }
         }
 
-        // 4. Main App Container direct path
-        let appDirectDir = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget/Data/Library/Application Support/YouTubeWidget", isDirectory: true)
-        try? FileManager.default.createDirectory(at: appDirectDir, withIntermediateDirectories: true)
-        if !dirs.contains(where: { $0.path == appDirectDir.path }) {
-            dirs.append(appDirectDir)
+        // 4. Main App Container direct paths (Finch & legacy)
+        let appDirs = [
+            userHome.appendingPathComponent("Library/Containers/com.ufukcelen.finch/Data/Library/Application Support/Finch", isDirectory: true),
+            userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget/Data/Library/Application Support/YouTubeWidget", isDirectory: true)
+        ]
+        for ad in appDirs {
+            try? FileManager.default.createDirectory(at: ad, withIntermediateDirectories: true)
+            if !dirs.contains(where: { $0.path == ad.path }) {
+                dirs.append(ad)
+            }
         }
 
         self.targetDirs = dirs
@@ -110,10 +125,16 @@ public final class SharedDataManager: @unchecked Sendable {
 
         // Invalidate chronod cache if present
         let userHome = FileManager.default.homeDirectoryForCurrentUser
-        let chronoPlaceholders = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/SystemData/com.apple.chrono/placeholders", isDirectory: true)
-        try? FileManager.default.removeItem(at: chronoPlaceholders)
-        let chronoTimelines = userHome.appendingPathComponent("Library/Containers/com.ufukcelen.youtubewidget.extension/Data/SystemData/com.apple.chrono/timelines", isDirectory: true)
-        try? FileManager.default.removeItem(at: chronoTimelines)
+        let chronoExts = [
+            "com.ufukcelen.finch.extension",
+            "com.ufukcelen.youtubewidget.extension"
+        ]
+        for ext in chronoExts {
+            let chronoPlaceholders = userHome.appendingPathComponent("Library/Containers/\(ext)/Data/SystemData/com.apple.chrono/placeholders", isDirectory: true)
+            try? FileManager.default.removeItem(at: chronoPlaceholders)
+            let chronoTimelines = userHome.appendingPathComponent("Library/Containers/\(ext)/Data/SystemData/com.apple.chrono/timelines", isDirectory: true)
+            try? FileManager.default.removeItem(at: chronoTimelines)
+        }
 
         // Notify WidgetKit
         WidgetCenter.shared.reloadAllTimelines()

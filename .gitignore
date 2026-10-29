@@ -7,6 +7,11 @@ DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 YouTubeWidget.app/
+Finch.app/
+*.app/
 build/
 *.icns.tmp
+Assets.car
+AppIcon_1024.png
+Icon*
 releases/

@@ -13,6 +13,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Prevent macOS from killing the app in background (LSUIElement mode)
         ProcessInfo.processInfo.disableAutomaticTermination("Keep app alive for widget interactions")
+
+        // Check for updates in background
+        Task { @MainActor in
+            await UpdateChecker.shared.checkForUpdates(manual: false)
+        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -20,7 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if url.scheme == "http" || url.scheme == "https" {
                 // Widget was clicked -> Open the profile or content in default browser (Safari, Chrome, etc.)
                 NSWorkspace.shared.open(url)
-            } else if url.scheme == "youtubewidget" || url.scheme == "socialwidget" {
+            } else if url.scheme == "youtubewidget" || url.scheme == "socialwidget" || url.scheme == "finch" {
                 // Settings URL scheme -> Open settings window
                 let platformParam = URLComponents(url: url, resolvingAgainstBaseURL: false)?
                     .queryItems?.first(where: { $0.name == "platform" })?.value

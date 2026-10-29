@@ -32,7 +32,7 @@ public final class DesktopWindowManager: NSObject, NSWindowDelegate {
             defer: false
         )
         window.center()
-        window.title = "Sosyal Medya Widget Ayarları & Yönetici"
+        window.title = "Finch - Sosyal Medya Widget Yöneticisi"
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.contentView = NSHostingView(rootView: SettingsView(viewModel: WidgetViewModel.shared))

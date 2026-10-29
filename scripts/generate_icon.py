@@ -1,67 +1,42 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from PIL import Image, ImageDraw
+import shutil
+import json
+from PIL import Image, ImageFilter
 
 def create_icon():
-    os.makedirs("AppIcon.iconset", exist_ok=True)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.abspath(os.path.join(script_dir, ".."))
+    logo_path = os.path.join(script_dir, "finch_logo.png")
     
-    # 1024x1024 master icon
+    if not os.path.exists(logo_path):
+        print(f"Error: {logo_path} not found")
+        return
+
+    src = Image.open(logo_path).convert("RGBA")
     size = 1024
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
+    target_dim = 880
+    scale = min(target_dim / src.width, target_dim / src.height)
+    new_w = int(src.width * scale)
+    new_h = int(src.height * scale)
+    resized_src = src.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
-    # Outer squircle / rounded rectangle (Apple macOS style icon shape)
-    margin = 80
-    radius = 210
-    box = [margin, margin, size - margin, size - margin]
+    # Soft ambient drop shadow for native macOS look
+    shadow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    pos_x = (size - new_w) // 2
+    pos_y = (size - new_h) // 2 + 12
+    alpha = resized_src.split()[3]
+    shadow_layer = Image.new("RGBA", (new_w, new_h), (0, 0, 0, 95))
+    shadow.paste(shadow_layer, (pos_x, pos_y), alpha)
+    shadow = shadow.filter(ImageFilter.GaussianBlur(radius=16))
 
-    # Gradient background: YouTube Red (#FF0000 -> #B30000)
-    # We create a gradient image and mask it with the rounded rect
-    mask = Image.new("L", (size, size), 0)
-    mask_draw = ImageDraw.Draw(mask)
-    mask_draw.rounded_rectangle(box, radius=radius, fill=255)
+    master = Image.alpha_composite(Image.new("RGBA", (size, size), (0, 0, 0, 0)), shadow)
+    master.paste(resized_src, ((size - new_w) // 2, (size - new_h) // 2), resized_src)
 
-    grad = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    grad_draw = ImageDraw.Draw(grad)
-    for y in range(margin, size - margin):
-        ratio = (y - margin) / (size - 2 * margin)
-        # Red gradient
-        r = int(255 - ratio * 45)
-        g = int(20 - ratio * 20)
-        b = int(20 - ratio * 20)
-        grad_draw.line([(margin, y), (size - margin, y)], fill=(r, g, b, 255))
+    iconset_dir = os.path.join(root_dir, "AppIcon.iconset")
+    os.makedirs(iconset_dir, exist_ok=True)
 
-    img.paste(grad, (0, 0), mask)
-
-    # Subtle inner border for glassmorphism
-    border_draw = ImageDraw.Draw(img)
-    border_draw.rounded_rectangle(box, radius=radius, outline=(255, 255, 255, 70), width=8)
-
-    # Play button triangle in center
-    cx, cy = size // 2, size // 2 - 20
-    tri_w, tri_h = 160, 200
-    points = [
-        (cx - tri_w // 2, cy - tri_h // 2),
-        (cx - tri_w // 2, cy + tri_h // 2),
-        (cx + tri_w // 2 + 20, cy)
-    ]
-    border_draw.polygon(points, fill=(255, 255, 255, 250))
-
-    # Widget mini bars / stats indicator at the bottom
-    bar_y = cy + 180
-    bar_w = 40
-    gap = 25
-    bars = [60, 110, 85, 140]
-    total_w = len(bars) * bar_w + (len(bars) - 1) * gap
-    start_x = cx - total_w // 2
-
-    for i, h in enumerate(bars):
-        bx = start_x + i * (bar_w + gap)
-        by = bar_y - h
-        border_draw.rounded_rectangle([bx, by, bx + bar_w, bar_y], radius=12, fill=(255, 255, 255, 220))
-
-    # Save sizes for iconset
     icon_sizes = [
         (16, "icon_16x16.png"),
         (32, "icon_16x16@2x.png"),
@@ -76,15 +51,68 @@ def create_icon():
     ]
 
     for sz, filename in icon_sizes:
-        resized = img.resize((sz, sz), Image.Resampling.LANCZOS)
-        resized.save(os.path.join("AppIcon.iconset", filename))
+        res = master.resize((sz, sz), Image.Resampling.LANCZOS)
+        res.save(os.path.join(iconset_dir, filename))
 
-    # Run iconutil to create AppIcon.icns
-    subprocess.run(["iconutil", "-c", "icns", "AppIcon.iconset", "-o", "AppIcon.icns"], check=True)
-    # Cleanup iconset
-    import shutil
-    shutil.rmtree("AppIcon.iconset")
-    print("Created AppIcon.icns successfully!")
+    icns_path = os.path.join(root_dir, "AppIcon.icns")
+    subprocess.run(["iconutil", "-c", "icns", iconset_dir, "-o", icns_path], check=True)
+    shutil.rmtree(iconset_dir)
+    print("Created AppIcon.icns successfully from Finch logo!")
+
+    # Now create Assets.xcassets and compile Assets.car for WidgetKit & macOS 14+
+    xcassets_dir = os.path.join(root_dir, "Assets.xcassets")
+    appiconset_dir = os.path.join(xcassets_dir, "AppIcon.appiconset")
+    os.makedirs(appiconset_dir, exist_ok=True)
+
+    contents = {
+        "images": [
+            {"idiom": "mac", "size": "16x16", "scale": "1x", "filename": "icon_16x16.png"},
+            {"idiom": "mac", "size": "16x16", "scale": "2x", "filename": "icon_16x16@2x.png"},
+            {"idiom": "mac", "size": "32x32", "scale": "1x", "filename": "icon_32x32.png"},
+            {"idiom": "mac", "size": "32x32", "scale": "2x", "filename": "icon_32x32@2x.png"},
+            {"idiom": "mac", "size": "128x128", "scale": "1x", "filename": "icon_128x128.png"},
+            {"idiom": "mac", "size": "128x128", "scale": "2x", "filename": "icon_128x128@2x.png"},
+            {"idiom": "mac", "size": "256x256", "scale": "1x", "filename": "icon_256x256.png"},
+            {"idiom": "mac", "size": "256x256", "scale": "2x", "filename": "icon_256x256@2x.png"},
+            {"idiom": "mac", "size": "512x512", "scale": "1x", "filename": "icon_512x512.png"},
+            {"idiom": "mac", "size": "512x512", "scale": "2x", "filename": "icon_512x512@2x.png"}
+        ],
+        "info": {"author": "xcode", "version": 1}
+    }
+    with open(os.path.join(appiconset_dir, "Contents.json"), "w") as f:
+        json.dump(contents, f, indent=2)
+
+    for sz, filename in icon_sizes:
+        res = master.resize((sz, sz), Image.Resampling.LANCZOS)
+        res.save(os.path.join(appiconset_dir, filename))
+
+    env = os.environ.copy()
+    env["DEVELOPER_DIR"] = "/Applications/Xcode.app/Contents/Developer"
+    
+    import tempfile
+    temp_actool_dir = tempfile.mkdtemp()
+    partial_plist = os.path.join(temp_actool_dir, "partial.plist")
+    
+    actool_cmd = [
+        "xcrun", "actool",
+        xcassets_dir,
+        "--compile", temp_actool_dir,
+        "--platform", "macosx",
+        "--target-device", "mac",
+        "--minimum-deployment-target", "14.0",
+        "--app-icon", "AppIcon",
+        "--output-partial-info-plist", partial_plist
+    ]
+    subprocess.run(actool_cmd, env=env, check=True)
+    
+    # Copy Assets.car to root_dir
+    compiled_assets = os.path.join(temp_actool_dir, "Assets.car")
+    if os.path.exists(compiled_assets):
+        shutil.copy2(compiled_assets, os.path.join(root_dir, "Assets.car"))
+    
+    shutil.rmtree(temp_actool_dir)
+    shutil.rmtree(xcassets_dir)
+    print("Created Assets.car successfully with AppIcon!")
 
 if __name__ == "__main__":
     create_icon()

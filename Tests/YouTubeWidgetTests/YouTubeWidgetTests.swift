@@ -695,3 +695,61 @@ struct IntegrationTests {
         }.value
     }
 }
+
+// MARK: - UpdateChecker Tests
+@Suite("UpdateChecker Tests")
+struct UpdateCheckerTests {
+
+    @Test("Semantic version comparison detects newer versions")
+    func newerVersionDetection() {
+        #expect(UpdateChecker.isVersion("v0.0.8", newerThan: "0.0.7"))
+        #expect(UpdateChecker.isVersion("0.0.8", newerThan: "0.0.7"))
+        #expect(UpdateChecker.isVersion("v0.1.0", newerThan: "0.0.7"))
+        #expect(UpdateChecker.isVersion("v1.0.0", newerThan: "0.0.7"))
+        #expect(UpdateChecker.isVersion("v0.0.10", newerThan: "0.0.9"))
+        #expect(UpdateChecker.isVersion("1.0.0", newerThan: "0.9.9"))
+    }
+
+    @Test("Semantic version comparison detects older or equal versions")
+    func olderOrEqualVersions() {
+        #expect(!UpdateChecker.isVersion("v0.0.7", newerThan: "0.0.7"))
+        #expect(!UpdateChecker.isVersion("0.0.7", newerThan: "0.0.7"))
+        #expect(!UpdateChecker.isVersion("v0.0.6", newerThan: "0.0.7"))
+        #expect(!UpdateChecker.isVersion("0.0.1", newerThan: "0.0.7"))
+        #expect(!UpdateChecker.isVersion("0.0.7", newerThan: "v0.0.8"))
+    }
+
+    @Test("Normalize version strings")
+    func normalizeVersions() {
+        #expect(UpdateChecker.normalizeVersion("v0.0.8") == [0, 0, 8])
+        #expect(UpdateChecker.normalizeVersion("V1.2.3") == [1, 2, 3])
+        #expect(UpdateChecker.normalizeVersion("  v0.0.7-beta  ") == [0, 0, 7])
+    }
+
+    @Test("GitHubRelease JSON decoding")
+    func decodeGitHubRelease() throws {
+        let json = """
+        {
+            "tag_name": "v0.0.8",
+            "name": "Finch v0.0.8",
+            "body": "Yeni özellikler eklendi.",
+            "html_url": "https://github.com/ufukcelen/Finch/releases/tag/v0.0.8",
+            "published_at": "2026-10-29T10:00:00Z",
+            "assets": [
+                {
+                    "name": "Finch-v0.0.8-macOS.zip",
+                    "browser_download_url": "https://github.com/ufukcelen/Finch/releases/download/v0.0.8/Finch-v0.0.8-macOS.zip",
+                    "size": 750000
+                }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let release = try JSONDecoder().decode(GitHubRelease.self, from: json)
+        #expect(release.tagName == "v0.0.8")
+        #expect(release.name == "Finch v0.0.8")
+        #expect(release.assets.count == 1)
+        #expect(release.assets.first?.name == "Finch-v0.0.8-macOS.zip")
+        #expect(release.assets.first?.browserDownloadURL.contains("Finch-v0.0.8-macOS.zip") == true)
+    }
+}

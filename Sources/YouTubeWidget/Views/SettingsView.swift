@@ -126,6 +126,7 @@ public struct SettingsView: View {
     @ObservedObject var viewModel: WidgetViewModel
     @StateObject private var form = SettingsFormState()
     @ObservedObject private var logger = DebugLogger.shared
+    @ObservedObject private var updateChecker = UpdateChecker.shared
 
     public init(viewModel: WidgetViewModel) {
         self.viewModel = viewModel
@@ -135,25 +136,38 @@ public struct SettingsView: View {
         VStack(spacing: 0) {
             // Header
             HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: headerColors,
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                if let appIcon = NSImage(named: NSImage.applicationIconName) {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
                         .frame(width: 42, height: 42)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                } else {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: headerColors,
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 42, height: 42)
 
-                    Image(systemName: form.selectedPlatform.iconName)
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(.white)
+                        Image(systemName: form.selectedPlatform.iconName)
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.white)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Sosyal Medya Widget Yöneticisi")
-                        .font(.system(size: 15, weight: .bold))
+                    HStack(spacing: 6) {
+                        Text("Finch")
+                            .font(.system(size: 16, weight: .bold))
+                        Text("Sosyal Medya Widget Yöneticisi")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
                     Text("Masaüstündeki her widget bağımsız çalışır ve sağ tıklanarak düzenlenebilir.")
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
@@ -173,15 +187,76 @@ public struct SettingsView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
 
-                Text("v0.0.7")
+                Button {
+                    Task {
+                        await updateChecker.checkForUpdates(manual: true)
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        if updateChecker.isChecking {
+                            ProgressView()
+                                .controlSize(.mini)
+                        } else if updateChecker.updateAvailable {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 7, height: 7)
+                        }
+                        Text("v\(updateChecker.currentVersion)")
+                    }
                     .font(.caption2.bold())
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
-                    .background(Capsule().fill(Color.primary.opacity(0.08)))
+                    .background(
+                        Capsule().fill(
+                            updateChecker.updateAvailable ? Color.green.opacity(0.18) : Color.primary.opacity(0.08)
+                        )
+                    )
+                }
+                .buttonStyle(.plain)
+                .help(updateChecker.updateAvailable ? "Yeni sürüm mevcut (v\(updateChecker.latestVersion))" : "Güncellemeleri Denetle")
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .background(Color.primary.opacity(0.04))
+
+            if updateChecker.updateAvailable {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(.green)
+                        .font(.system(size: 13, weight: .bold))
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Yeni Sürüm Kullanılabilir: **v\(updateChecker.latestVersion)**")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("En son özellikler ve hata düzeltmeleri hazır.")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Button("Notlar") {
+                        updateChecker.showReleaseNotesSheet = true
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
+                    Button {
+                        updateChecker.openDownloadOrReleasePage()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.down.circle.fill")
+                            Text("İndir / Güncelle")
+                        }
+                        .font(.system(size: 11, weight: .bold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 9)
+                .background(Color.green.opacity(0.10))
+            }
 
             Divider()
 
@@ -414,6 +489,12 @@ public struct SettingsView: View {
         .sheet(isPresented: $form.showDebugSheet) {
             debugSheetView
         }
+        .sheet(isPresented: $updateChecker.showReleaseNotesSheet) {
+            releaseNotesSheetView
+        }
+        .task {
+            await updateChecker.checkForUpdates(manual: false)
+        }
         .onAppear {
             let plat: SocialPlatform
             switch viewModel.activeSlot {
@@ -456,6 +537,53 @@ public struct SettingsView: View {
             .foregroundColor(isSelected ? .white : .primary)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Release Notes Sheet View
+    private var releaseNotesSheetView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "sparkles")
+                    .foregroundColor(.green)
+                    .font(.title3)
+                Text("Finch v\(updateChecker.latestVersion) Sürüm Notları")
+                    .font(.headline)
+                Spacer()
+                Button("Kapat") {
+                    updateChecker.showReleaseNotesSheet = false
+                }
+            }
+            .padding(.bottom, 2)
+
+            ScrollView {
+                Text(updateChecker.releaseNotes)
+                    .font(.system(size: 12))
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.04)))
+
+            HStack {
+                if let url = updateChecker.releasePageURL {
+                    Link("GitHub'da İncele", destination: url)
+                        .font(.caption)
+                }
+
+                Spacer()
+
+                Button {
+                    updateChecker.openDownloadOrReleasePage()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.down.circle.fill")
+                        Text("İndir / Güncelle")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(16)
+        .frame(width: 480, height: 360)
     }
 
     // MARK: - Debug Diagnostics Sheet View

@@ -5,15 +5,19 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>tr</string>
     <key>CFBundleDisplayName</key>
-    <string>Sosyal Medya Widget</string>
+    <string>Finch</string>
     <key>CFBundleExecutable</key>
     <string>YouTubeWidgetExtension</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
-    <string>com.ufukcelen.youtubewidget.extension</string>
+    <string>com.ufukcelen.finch.extension</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>YouTubeWidgetExtension</string>
+    <string>Finch</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>CFBundleShortVersionString</key>

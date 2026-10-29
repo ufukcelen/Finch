@@ -1,54 +1,35 @@
-# 🎬 YouTube macOS Widget
+# 🐦 Finch — macOS Sosyal Medya Widget Yöneticisi
 
-macOS için geliştirilmiş, **YouTube Kanal İsminizi**, **Abone Sayınızı** ve **Son Eklediğiniz Shorts Videosunun İzlenme Sayısını** canlı olarak masaüstünüzde ve üst menü çubuğunuzda gösteren modern ve şık bir widget uygulaması.
+macOS için geliştirilmiş; **YouTube**, **Instagram** ve **TikTok** hesaplarınızın takipçi, abone ve canlı istatistiklerini masaüstünüzde şık widget'larla gösteren modern bir araç takımı uygulaması.
+
+> 📦 **GitHub Deposu:** [https://github.com/ufukcelen/Finch](https://github.com/ufukcelen/Finch)
 
 ---
 
 ## ✨ Özellikler
 
-- **🔴 Canlı Kanal Bilgileri:**
-  - YouTube Kanal Adı ve Özel URL (`@kullaniciadi`)
-  - Kanal Profil Fotoğrafı (Avatar)
-  - Güncel **Abone Sayısı** (Canlı nabız efektiyle)
-- **🔥 Son Shorts (Kısa Video) Kartı:**
-  - En son yüklediğiniz Shorts videosunun başlığı
-  - Canlı **İzlenme Sayısı** (Görüntüleme)
-  - Video önizleme görseli (Thumbnail)
-  - Karta tıklandığında videoyu doğrudan tarayıcıda açma
-- **🪟 Masaüstü Yüzen Widget (Desktop Floating Widget):**
-  - macOS Sonoma / Sequoia tasarım diliyle uyumlu saydam cam efekti (*Frosted Glass / Ultra Thin Material*)
-  - Masaüstünde istenilen konuma serbestçe sürüklenebilir (konum otomatik hatırlanır)
-  - **Pencerelerin Altına Sabitleme** (gerçek masaüstü widget'ı gibi duvar kağıdı üzerinde kalma) veya **Her Zaman Üstte Tutma** seçeneği
-  - Ayarlanabilir saydamlık (Opaklık ayarı)
-- **🔝 Üst Menü Çubuğu (Menu Bar) Entegrasyonu:**
-  - macOS üst barında YouTube simgesi ve canlı abone sayısı
-  - Tek tıkla widget'ı gizleme/gösterme, anlık yenileme ve kanala gitme kısayolları
+- **📱 Bağımsız 3 Sosyal Medya Platformu:**
+  - 🔴 **YouTube:** Abone sayısı ve son Shorts videosu
+  - 🟣 **Instagram:** Takipçi ve gönderi sayısı
+  - ⚫ **TikTok:** Takipçi ve toplam beğeni sayısı
+- **🔄 Anlık Masaüstü Yenileme (Interactive Refresh):**
+  - Masaüstündeki widget üzerinden tek tıkla canlı verileri yenileme
+- **🪟 macOS Sonoma & Sequoia Yerel Widget Desteği:**
+  - Hem Küçük (Small) hem de Orta (Medium) boyut seçenekleri
+  - "Araç Takımını Düzenle" ile her masaüstü widget'ına özel hesap ve tema seçimi
 - **⚡ API Anahtarı Zorunluluğu Yoktur:**
-  - Herhangi bir Google Cloud projesi veya API anahtarı oluşturmanıza gerek kalmadan, doğrudan kanal kullanıcı adınızla çalışır.
-  - İsteğe bağlı olarak kendi YouTube Data API v3 anahtarınızı da kullanabilirsiniz.
-- **⏱️ Otomatik Yenileme:**
-  - Arka planda belirlediğiniz aralıklarla (5 dk, 15 dk, 30 dk, 1 saat) verileri otomatik günceller.
+  - Hesap kullanıcı adınızla doğrudan çalışır; isteğe bağlı YouTube Data API v3 de desteklenir.
 
 ---
 
 ## 🚀 Hızlı Başlangıç
 
-### 1. Uygulamayı Başlatma
-Hazır derlenmiş `YouTubeWidget.app` uygulamasını doğrudan çalıştırabilirsiniz:
-
+### Derleme & Çalıştırma
 ```bash
-# Terminalden başlatmak için:
 ./build.sh --run
-
-# veya doğrudan Finder'dan YouTubeWidget.app dosyasına çift tıklayabilirsiniz.
 ```
 
-### 2. Uygulamalar Klasörüne Yükleme
-Uygulamayı Mac'inizin `/Applications` klasörüne taşımak isterseniz:
-
-```bash
-./build.sh --install
-```
+Derleme tamamlandığında `/Applications/Finch.app` olarak sisteme kurulur ve WidgetKit uzantısı aktif hale gelir.
 
 ---
 
